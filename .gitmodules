@@ -1,0 +1,3 @@
+[submodule "pythonmodules"]
+	path = pythonmodules
+	url = git@github.com:viaacode/python-modules.git
