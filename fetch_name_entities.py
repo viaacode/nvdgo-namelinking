@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import pandas as pd
-import numpy as np
-import seaborn as sns
 from pythonmodules.mediahaven import MediaHaven
 from pythonmodules.stanfordner import StanfordNER
 
@@ -13,8 +10,6 @@ import configparser
 
 config = configparser.ConfigParser()
 config.read('config.ini')
-print(config.sections())
-print(config['mediahaven'])
 
 # init 
 ner = StanfordNER()
