@@ -8,6 +8,8 @@ from sqlalchemy import Table, MetaData, create_engine
 from progress.bar import ShadyBar
 import configparser
 
+import sys
+
 config = configparser.ConfigParser()
 config.read('config.ini')
 
@@ -20,13 +22,19 @@ db.connect()
 meta = MetaData(db, reflect=True)
 table = meta.tables[config['db']['table_name']]
 
-data = mh.search('+(workflow:GMS) +(archiveStatus:on_tape)')
+start = 0
+if (len(sys.argv) > 1):
+   start = int(sys.argv[1])
+
+data = mh.search('+(workflow:GMS) +(archiveStatus:on_tape)', start)
 # data.set_length(500) # debugging
 
 bar = ShadyBar('', max=len(data), suffix = '%(index)d/%(max)d - %(percent).1f%% - elapsed %(elapsed_td)s - eta %(eta_td)s')
+for i in range(start):
+    bar.next()
 
 # truncate table first
-db.execute(table.delete())
+# db.execute(table.delete())
 
 for idx, item in enumerate(data):
     text = item['description']
@@ -35,7 +43,7 @@ for idx, item in enumerate(data):
         date = [i['value'] for i in item['mdProperties'] if i['attribute'] == 'carrier_date']
         date = date[0] if len(date) > 0 else '0000-00-00'
         rows = [{
-            'id': idx,
+            'id': idx + start,
             'entity': e['value'], 
             'entity_type': e['type'],
             'context': e['context'] if 'context' in e else '',
