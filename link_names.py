@@ -99,6 +99,11 @@ class Linker:
                 d = self.is_matching(data)
                 if (d):
                     data['datediff'] = str(d)
+                    data = dict(
+                        archief_url = Archief.pid_to_url(data['pid'], data['entity']),
+                        namenlijst_url = 'https://database.namenlijst.be/#/person/_id=' + data['NML'],
+                        **data
+                    )
                     if (self.write_count == 0):
                         self.f.write(','.join(data.keys()) + '\n')
                     self.f.write(','.join(data.values()) + '\n')
