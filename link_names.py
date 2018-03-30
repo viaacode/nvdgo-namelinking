@@ -106,7 +106,7 @@ class Linker:
                     )
                     if (self.write_count == 0):
                         self.f.write(','.join(data.keys()) + '\n')
-                    self.f.write(','.join(data.values()) + '\n')
+                    self.f.write('"' + '","'.join([val.replace('"', '""') for val in data.values()]) + '"\n')
                     self.write_count += 1
             except Exception:
                 print('err for:')
