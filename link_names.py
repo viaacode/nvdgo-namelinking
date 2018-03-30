@@ -14,6 +14,7 @@ import time
 import sys
 import numpy as np
 from pythonmodules.namenlijst import Namenlijst
+from pythonmodules.archief import Archief
 
 importfile = None
 if len(sys.argv) >= 2:
@@ -35,6 +36,7 @@ else:
 # for testing:
 # df = df[(df['First Name'] == 'Armand') & (df['Last Name'] == 'Dubois')]
 # df = df[(df['Last Name'] == 'Stevigny')]
+
 
 class Linker:
     maps = {
@@ -85,21 +87,21 @@ class Linker:
         for r in res:
             # print(str(idx) + ' ' + row['First Name'])
             data = {
-                    '_index': idx,
                     'entity': r['entity'],
                     'article_date': r['publish_date'],
                     'title': r['title'],
                     'pid': r['pid']
                 }
             for k, v in self.maps.items():
-                data[k] = row[v]
+                data[k] = str(row[v])
 
             try:
                 d = self.is_matching(data)
                 if (d):
-                    data['datediff'] = d
-                    df = pd.DataFrame([data]).set_index('_index')
-                    df.to_csv(self.f, header=(self.write_count == 0))
+                    data['datediff'] = str(d)
+                    if (self.write_count == 0):
+                        self.f.write(','.join(data.keys()) + '\n')
+                    self.f.write(','.join(data.values()) + '\n')
                     self.write_count += 1
             except Exception:
                 print('err for:')
