@@ -1,18 +1,19 @@
 # coding: utf-8
 
 import pandas as pd
-from sqlalchemy import Table, MetaData, create_engine
-from sqlalchemy.sql import select
-from sqlalchemy import or_
 import re
-from progress.bar import ShadyBar
 import configparser
-from datetime import datetime, timedelta
-from queue import Queue
-from threading import Thread
 import time
 import sys
 import numpy as np
+
+from sqlalchemy import Table, MetaData, create_engine, or_
+from sqlalchemy.sql import select
+from progress.bar import ShadyBar
+from datetime import datetime, timedelta
+from queue import Queue
+from threading import Thread
+
 from pythonmodules.namenlijst import Namenlijst
 from pythonmodules.archief import Archief
 
@@ -114,16 +115,18 @@ class Linker:
                 raise
 
     def is_matching(self, data):
-        date_close_to_death = False
+        # date_close_to_death = False
         date_diff = None
         try:
-            data['article_date'] = data['article_date'].replace('xx', '01')
-            date = datetime.strptime(data['article_date'], '%Y-%m-%d')
-            date_diff = date - data['died_date']
-            date_diff = abs(date_diff)
-            date_close_to_death = date_diff < self.max_time_diff
+            if len(data['died_date']) >= 10:
+                date = datetime.strptime(data['article_date'].replace('xx', '01'), '%Y-%m-%d')
+                died_date = datetime.strptime(data['died_date'].replace('xx', '01')[0:10], '%Y-%m-%d')
+                date_diff = date - died_date
+                date_diff = abs(date_diff)
+                # date_close_to_death = date_diff < self.max_time_diff
         except Exception:
-            pass
+            raise
+            #pass
 
         firstnames = data['firstname'].split(' ')
         for k, v in enumerate(firstnames):
