@@ -35,8 +35,9 @@ else:
     df = nl.findPerson()
 
 # for testing:
-# df = df[(df['First Name'] == 'Armand') & (df['Last Name'] == 'Dubois')]
+#df = df[(df['First Name'] == 'Armand') & (df['Last Name'] == 'Dubois')]
 # df = df[(df['Last Name'] == 'Stevigny')]
+#df = df[(df['First Name'] == 'Jean') & (df['Last Name'] == 'Robyn')]
 
 
 class Linker:
@@ -125,8 +126,7 @@ class Linker:
                 date_diff = abs(date_diff)
                 # date_close_to_death = date_diff < self.max_time_diff
         except Exception:
-            raise
-            #pass
+            pass
 
         firstnames = data['firstname'].split(' ')
         for k, v in enumerate(firstnames):
@@ -171,7 +171,6 @@ class Linker:
             self.q.task_done()
             self.bar.next()
             self.f.flush()
-
 
 l = Linker(10)
 l.start(df)
