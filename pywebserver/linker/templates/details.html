@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+ <head>
+   <meta charset="utf-8">
+   <title>{{ title }}</title>
+   <link rel="stylesheet" href="https://unpkg.com/purecss@1.0.0/build/pure-min.css" integrity="sha384-nn4HPE8lTHyVtfCBi5yW9d20FjT8BJwUXyWZT9InLYax14RDjBj46LmSztkmNP9w" crossorigin="anonymous">
+   <style>
+   img.preview {
+     zoom: 2;
+     float: left;
+     padding: 2px;
+   }
+   </style>
+   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+ </head>
+ <body>
+   <!-- h1><a href="https://hetarchief.be/en/pid/{{ pid|slice:"0:10" }}/{{ pid|slice:"-2:2" }}">{{ pid }}</a></h1>
+   <h2>{{ meta.title }}</h2 -->
+   <table class="pure-table pure-table-striped">
+      <tbody>
+        <tr> <td>Publicatie datum</td> <td>{{ props.carrier_date }}</td> </tr>
+        <tr> <td>Titel</td> <td>{{ meta.title }}</td> </tr>
+        <tr> <td>mediaObjectId</td> <td>{{ meta.mediaObjectId }}</td> </tr>
+        <!--
+        <tr> <td></td> <td></td> </tr>
+        -->
+      </tbody>
+    </table>
+
+   </dl>
+   {% if preview %}<img class="pure-img preview" src="data:image/jpg;base64,{{ preview }}" alt="{{ pid }}" title="{{ meta.title }}">{% endif %}
+   {% if preview_confidence %}<img class="pure-img preview" src="data:image/jpg;base64,{{ preview_confidence }}" alt="{{ pid }}" title="{{ meta.title }}">{% endif %}
+   {% if preview_full %}<img class="pure-img preview" src="data:image/jpg;base64,{{ preview_full }}" alt="{{ pid }}" title="{{ meta.title }}">{% endif %}
+   {% if preview_confidence_full %}<img class="pure-img preview" src="data:image/jpg;base64,{{ preview_confidence_full }}" alt="{{ pid }}" title="{{ meta.title }}">{% endif %}
+
+   {% if not preview %}
+     <img class="pure-img preview" src="{{ previewImageUrl }}" alt="{{ pid }}" title="{{ meta.title }}">
+   {% endif %}
+
+   <!-- hr />
+   <pre>
+     {{meta}}
+   </pre -->
+   <script>
+   $(function () {
+      window.ocr = {{ ocr|safe }};
+     $('img.preview').on('click', function () {
+       console.log(this)
+     });
+   });
+   </script>
+ </body>
+</html>

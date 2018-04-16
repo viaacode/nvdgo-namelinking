@@ -1,0 +1,19 @@
+iframe {
+  display:  none !important;
+}
+.asset-detail-left {
+  width: 100%;
+}
+.asset-detail-left .padder {
+    padding: 5px !important;
+}
+.asset-detail-right,
+.asset-detail-stats,
+.subtitle-bar .serie-container,
+.frm-add-collection,
+.asset-detail-comments,
+.social-media-buttons,
+footer {
+  display: none !important;
+}
+#main-content{margin-top:0px !important;}
