@@ -34,7 +34,6 @@ def get_info(pid, words = []):
         result['preview'] = b64img(im.highlight_words(words))
 
     result['preview_confidence_full'] = b64img(im.highlight_confidence())
-    result['preview_confidence'] = b64img(im.crop(im = im.highlight_confidence()))
 
     im.close()
     result['props'] = {item['attribute']: item['value'] for item in im.meta['mdProperties']}
