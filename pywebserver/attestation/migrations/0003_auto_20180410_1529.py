@@ -6,7 +6,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('linker', '0002_auto_20180410_1459'),
+        ('attestation', '0002_auto_20180410_1459'),
     ]
 
     operations = [

@@ -1,6 +1,9 @@
 from django.core.cache.backends.filebased import FileBasedCache
 import sys, os
 
+if __name__ != '__main__':
+  raise Exception("Meant to be ran as quick helper script")
+
 if len(sys.argv) != 2:
    print("Usage:\n\t%s directory|file")
    raise Exception("Expected 1 argument")

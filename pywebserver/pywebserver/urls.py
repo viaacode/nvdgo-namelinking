@@ -24,10 +24,10 @@ from django.urls import include
 from django.views.generic import RedirectView
 
 urlpatterns += [
-    path('linker/', include('linker.urls')),
+    path('attestation/', include('attestation.urls')),
 ]
 urlpatterns += [
-    path('', RedirectView.as_view(url='/linker/')),
+    path('', RedirectView.as_view(url='/attestation/')),
 ]
 
 from django.conf.urls.static import static

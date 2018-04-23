@@ -22,7 +22,7 @@ var escape = function(string) {
 };
 
 var get_url_archief = function (d) {
-  return '/linker/details/' + d['article_id'] + '/' + d['nmlid'] + '/' + d['entity'].replace(/\s+/, '/');
+  return '/attestation/details/' + d['article_id'] + '/' + d['nmlid'] + '/' + d['entity'].replace(/\s+/, '/');
 };
 
 var get_url_namenlijst = function (d) {
@@ -225,7 +225,7 @@ jsonrpc('get_items', {amount: 100}).then(function (data) {
       // return a.lastname > b.lastname ? 1 : a.lastname < b.lastname ? -1 : a.firstname > b.firstname ? 1 : -1;
     }
     return a.score - b.score;
-  }));
+  })); 
 
   d3.select('table tbody tr').select(function (){this.click();});
   var $form = d3.select('#update-item');

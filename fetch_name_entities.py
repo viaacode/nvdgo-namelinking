@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from pythonmodules.mediahaven import MediaHaven
-from pythonmodules.stanfordner import StanfordNER
+from pythonmodules.ner import NERFactory
 
 from sqlalchemy import Table, MetaData, create_engine
 
@@ -13,14 +13,19 @@ import sys
 config = configparser.ConfigParser()
 config.read('config.ini')
 
-# init 
-ner = StanfordNER()
+# init
+ner = NERFactory().get()
 mh = MediaHaven(config)
 
-db = create_engine(config['db']['connection_url'])
-db.connect()
-meta = MetaData(db, reflect=True)
-table = meta.tables[config['db']['table_name']]
+args = [arg for arg in sys.argv if arg not in ('--debug', '-d')]
+debug = len(args) != len(sys.argv)
+sys.argv = args
+
+if not debug:
+    db = create_engine(config['db']['connection_url'])
+    db.connect()
+    meta = MetaData(db, reflect=True)
+    table = meta.tables[config['db']['table_name']]
 
 start = 0
 if (len(sys.argv) > 1):
@@ -34,24 +39,27 @@ for i in range(start):
     bar.next()
 
 # truncate table first
-# db.execute(table.delete())
+#if not debug:
+#    db.execute(table.delete())
 
 for idx, item in enumerate(data):
     text = item['description']
-    entities = ner.detect_entities(text, 20, set(['PERSON']))
+    entities = ner.tag_entities(text)
     if len(entities) > 0:
         date = [i['value'] for i in item['mdProperties'] if i['attribute'] == 'carrier_date']
         date = date[0] if len(date) > 0 else '0000-00-00'
         rows = [{
             'id': idx + start,
-            'entity': e['value'], 
+            'entity': e['value'],
             'entity_type': e['type'],
             'context': e['context'] if 'context' in e else '',
             'pid': item['externalId'],
-            'publish_date': date, 
+            'publish_date': date,
             'title': item['title']
         } for e in entities]
-        db.execute(table.insert(), rows)
+        if debug:
+            print('\n'.join(['%s\t%s\t%s' % (r['pid'], r['entity'], r['entity_type']) for r in rows]))
+        else:
+            db.execute(table.insert(), rows)
     bar.next()
 bar.finish()
-
