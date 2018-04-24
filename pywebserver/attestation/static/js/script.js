@@ -1,26 +1,3 @@
-/*! fast-levenshtein 2016-12-27. Copyright Ramesh Nair <ram@hiddentao.com> (http://www.hiddentao.com/) */
-!function(){"use strict";var a;try{a="undefined"!=typeof Intl&&"undefined"!=typeof Intl.Collator?Intl.Collator("generic",{sensitivity:"base"}):null}catch(b){console.log("Collator could not be initialized and wouldn't be used")}var c=[],d=[],e={get:function(b,e,f){var g=f&&a&&f.useCollator,h=b.length,i=e.length;if(0===h)return i;if(0===i)return h;var j,k,l,m,n;for(l=0;i>l;++l)c[l]=l,d[l]=e.charCodeAt(l);c[i]=i;var o;if(g)for(l=0;h>l;++l){for(k=l+1,m=0;i>m;++m)j=k,o=0===a.compare(b.charAt(l),String.fromCharCode(d[m])),k=c[m]+(o?0:1),n=j+1,k>n&&(k=n),n=c[m+1]+1,k>n&&(k=n),c[m]=j;c[m]=k}else for(l=0;h>l;++l){for(k=l+1,m=0;i>m;++m)j=k,o=b.charCodeAt(l)===d[m],k=c[m]+(o?0:1),n=j+1,k>n&&(k=n),n=c[m+1]+1,k>n&&(k=n),c[m]=j;c[m]=k}return k}};"undefined"!=typeof define&&null!==define&&define.amd?define(function(){return e}):"undefined"!=typeof module&&null!==module&&"undefined"!=typeof exports&&module.exports===exports?module.exports=e:"undefined"!=typeof self&&"function"==typeof self.postMessage&&"function"==typeof self.importScripts?self.Levenshtein=e:"undefined"!=typeof window&&null!==window&&(window.Levenshtein=e)}();
-
-// List of HTML entities for escaping.
-var htmlEscapes = {
-  '&': '&amp;',
-  '<': '&lt;',
-  '>': '&gt;',
-  '"': '&quot;',
-  "'": '&#x27;',
-  '/': '&#x2F;'
-};
-
-// Regex containing the keys listed immediately above.
-var htmlEscaper = /[&<>"'\/]/g;
-
-// Escape a string for HTML interpolation.
-var escape = function(string) {
-  return ('' + string).replace(htmlEscaper, function(match) {
-    return htmlEscapes[match];
-  });
-};
-
 var get_url_archief = function (d) {
   return '/attestation/details/' + d['article_id'] + '/' + d['nmlid'] + '/' + d['entity'].replace(/\s+/, '/');
 };
@@ -62,9 +39,9 @@ d3.text('loading').then(function (d) {
 
 var tabulate = function (data) {
   var table = d3.select('#csvtable');
-  var columns = ['status', /*'score', 'days_diff', */ 'firstname', 'lastname', 'entity', 'title']
-	var thead = table.select('thead');
-	var tbody = table.select('tbody');
+  var columns = ['status', /*'score', 'days_diff', */ 'firstname', 'lastname', 'entity', 'title'];
+  var thead = table.select('thead');
+  var tbody = table.select('tbody');
   var iframes = ['archief', 'namenlijst'];
   data = data.filter(function (d) {
     return d['status'] == '';
@@ -85,10 +62,10 @@ var tabulate = function (data) {
     d3.select('iframe#' + k).on('load', onload).on('hashchange', onload);
   }
 
-	var rows = tbody.selectAll('tr')
-	    .data(data)
-	    .enter()
-	  .append('tr')
+  var rows = tbody.selectAll('tr')
+      .data(data)
+      .enter()
+      .append('tr')
     .on('click', function (d) {
       var $this = d3.select(this);
       if (!$this.classed('active')) {
@@ -225,7 +202,7 @@ jsonrpc('get_items', {amount: 100}).then(function (data) {
       // return a.lastname > b.lastname ? 1 : a.lastname < b.lastname ? -1 : a.firstname > b.firstname ? 1 : -1;
     }
     return a.score - b.score;
-  })); 
+  }));
 
   d3.select('table tbody tr').select(function (){this.click();});
   var $form = d3.select('#update-item');

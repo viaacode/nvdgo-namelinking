@@ -52,7 +52,7 @@ for idx, item in enumerate(data):
             'id': idx + start,
             'entity': e['value'],
             'entity_type': e['type'],
-            'context': e['context'] if 'context' in e else '',
+            # v'context': e['context'] if 'context' in e else '',
             'pid': item['externalId'],
             'publish_date': date,
             'title': item['title']

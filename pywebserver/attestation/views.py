@@ -12,11 +12,10 @@ def loading(request):
 
 def details(request, pid, nmlid, words=''):
     from methods import get_info
-    import json
     words = words.split('/')
     context = get_info(pid, words)
     context['nmlid'] = nmlid
-    context['ocr'] = json.dumps([word.__dict__ for word in context['ocr']])
+    context['alto'] = context['alto'].jsonserialize()
     return __render(request, 'details.html', context=context)
 
 def detailframe(request, pid, nmlid, words = ''):

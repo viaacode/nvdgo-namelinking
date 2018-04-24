@@ -21,7 +21,7 @@ importfile = None
 if len(sys.argv) >= 2:
     importfile = sys.argv[1]
 else:
-    raise Exception("Expected more args, usage: %s excelfile.xlsx" % sys.argv)
+    raise Exception("Expected more args, usage: %s excelfile.xlsx [outputfile.csv]" % sys.argv)
 
 
 if importfile:
@@ -54,9 +54,9 @@ class Linker:
     write_count = 0
     table = None
 
-    def __init__(self, num_worker_threads = 10):
+    def __init__(self, num_worker_threads = 10, csv_file = None):
         self.max_time_diff = timedelta(15)
-        self.csv_file = 'test.csv'
+        self.csv_file = 'test.csv' if csv_file is None else csv_file
 
         config = configparser.ConfigParser()
         config.read('config.ini')
@@ -172,5 +172,5 @@ class Linker:
             self.bar.next()
             self.f.flush()
 
-l = Linker(10)
+l = Linker(10, csv_file = sys.argv[2])
 l.start(df)
