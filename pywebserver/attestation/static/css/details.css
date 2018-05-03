@@ -1,0 +1,39 @@
+#previews {
+  width: 100%;
+  position: relative;
+  height: 650px;
+  background: #000;
+}
+#previews .image-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 50px;
+}
+#previews .prev,
+#previews .next {
+  position: absolute;
+  height: 32px;
+  margin-top: -66px;
+  top: 50%;
+}
+#previews .prev {
+  left: 20px;
+}
+#previews .next {
+  right: 20px;
+  cursor: pointer;
+}
+#previews .footer-info {
+  position: absolute;
+  height: 50px;
+  width: 100%;
+  left: 0;
+  bottom: 0;
+  line-height: 50px;
+  font-size: 24px;
+  text-align: center;
+  color: white;
+  border-top: 1px solid #FFF;
+}

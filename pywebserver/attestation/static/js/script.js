@@ -1,5 +1,5 @@
 var get_url_archief = function (d) {
-  return '/attestation/details/' + d['article_id'] + '/' + d['nmlid'] + '/' + d['entity'].replace(/\s+/, '/');
+  return '/attestation/info/' + d['article_id'] + '/' + d['nmlid'] + '/' + d['entity'].replace(/\s+/, '/');
 };
 
 var get_url_namenlijst = function (d) {

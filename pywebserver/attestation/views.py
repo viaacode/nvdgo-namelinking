@@ -8,7 +8,7 @@ def index(request):
     return __render(request, 'index.html')
 
 def loading(request):
-    return __render(request, 'index.html')
+    return __render(request, 'loading.html')
 
 def details(request, pid, nmlid, words=''):
     from methods import get_info

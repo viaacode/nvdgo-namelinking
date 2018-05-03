@@ -29,7 +29,8 @@ ALLOWED_HOSTS = [
     'do-tst-mke-01.do.viaa.be',
     '::1',
     'localhost',
-    '127.0.0.1'
+    '127.0.0.1',
+    'nvdgo-linking.py'
 ]
 
 
