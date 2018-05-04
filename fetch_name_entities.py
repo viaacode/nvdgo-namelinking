@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from pythonmodules.mediahaven import MediaHaven
-from pythonmodules.ner import NERFactory
+from pythonmodules.ner import NERFactory, normalize
 
 from sqlalchemy import Table, MetaData, create_engine
 
@@ -10,6 +10,8 @@ import configparser
 
 import sys
 
+
+
 config = configparser.ConfigParser()
 config.read('config.ini')
 
@@ -17,9 +19,14 @@ config.read('config.ini')
 ner = NERFactory().get()
 mh = MediaHaven(config)
 
-args = [arg for arg in sys.argv if arg not in ('--debug', '-d')]
-debug = len(args) != len(sys.argv)
-sys.argv = args
+def has_arg(*args):
+    args = [arg for arg in sys.argv if arg not in args]
+    exists = len(args) != len(sys.argv)
+    sys.argv = args
+    return exists
+
+debug = has_arg('--debug', '-d')
+clear_db = has_arg('--clear')
 
 if not debug:
     db = create_engine(config['db']['connection_url'])
@@ -39,27 +46,27 @@ for i in range(start):
     bar.next()
 
 # truncate table first
-#if not debug:
-#    db.execute(table.delete())
+if not debug and clear_db:
+    db.execute(table.delete())
 
 for idx, item in enumerate(data):
     text = item['description']
-    entities = ner.tag_entities(text)
-    if len(entities) > 0:
-        date = [i['value'] for i in item['mdProperties'] if i['attribute'] == 'carrier_date']
-        date = date[0] if len(date) > 0 else '0000-00-00'
-        rows = [{
-            'id': idx + start,
-            'entity': e['value'],
-            'entity_type': e['type'],
-            # v'context': e['context'] if 'context' in e else '',
-            'pid': item['externalId'],
-            'publish_date': date,
-            'title': item['title']
-        } for e in entities]
-        if debug:
-            print('\n'.join(['%s\t%s\t%s' % (r['pid'], r['entity'], r['entity_type']) for r in rows]))
-        else:
-            db.execute(table.insert(), rows)
+    entities = ner.tag(text)
+    #if debug:
+    #    print(list(entities))
+    date = [i['value'] for i in item['mdProperties'] if i['attribute'] == 'carrier_date']
+    date = date[0] if len(date) > 0 else '0000-00-00'
+    rows = [{
+        'id': idx + start,
+        'entity': normalize(e[0]),
+        'entity_full': e[0],
+        'entity_type': e[1][0],
+        'pid': item['externalId'],
+        'index': text_index
+    } for text_index, e in enumerate(entities) if e[1] != 'O']
+    if debug:
+        print('\n'.join(['\t'.join([str(r) for r in rows])]))
+    elif len(rows):
+        db.execute(table.insert(), rows)
     bar.next()
 bar.finish()

@@ -7,7 +7,7 @@ import time
 import sys
 import numpy as np
 
-from sqlalchemy import Table, MetaData, create_engine, or_
+from sqlalchemy import Table, MetaData, create_engine, or_, and_, func
 from sqlalchemy.sql import select
 from progress.bar import ShadyBar
 from datetime import datetime, timedelta
@@ -16,6 +16,7 @@ from threading import Thread
 
 from pythonmodules.namenlijst import Namenlijst
 from pythonmodules.archief import Archief
+from pythonmodules.ner import normalize
 
 importfile = None
 if len(sys.argv) >= 2:
@@ -87,75 +88,43 @@ class Linker:
 
     def process(self, res, row, idx):
         for r in res:
-            # print(str(idx) + ' ' + row['First Name'])
             data = {
-                    'entity': r['entity'],
-                    'article_date': r['publish_date'],
-                    'title': r['title'],
-                    'pid': r['pid']
+                    'entity': r[0] + ' ' + r[1],
+                    'pid': r[2].strip()
                 }
             for k, v in self.maps.items():
                 data[k] = str(row[v])
 
             try:
-                d = self.is_matching(data)
-                if (d):
-                    data['datediff'] = str(d)
-                    data = dict(
-                        archief_url = Archief.pid_to_url(data['pid'], data['entity']),
-                        namenlijst_url = 'https://database.namenlijst.be/#/person/_id=' + data['NML'],
-                        **data
-                    )
-                    if (self.write_count == 0):
-                        self.f.write(','.join(data.keys()) + '\n')
-                    self.f.write('"' + '","'.join([val.replace('"', '""') for val in data.values()]) + '"\n')
-                    self.write_count += 1
+                data = dict(
+                    archief_url = Archief.pid_to_url(data['pid'], data['entity']),
+                    namenlijst_url = 'https://database.namenlijst.be/#/person/_id=' + data['NML'],
+                    **data
+                )
+                if (self.write_count == 0):
+                    self.f.write(','.join(data.keys()) + '\n')
+                self.f.write('"' + '","'.join([val.replace('"', '""') for val in data.values()]) + '"\n')
+                self.write_count += 1
             except Exception:
                 print('err for:')
                 print(data)
                 raise
 
-    def is_matching(self, data):
-        # date_close_to_death = False
-        date_diff = None
-        try:
-            if len(data['died_date']) >= 10:
-                date = datetime.strptime(data['article_date'].replace('xx', '01'), '%Y-%m-%d')
-                died_date = datetime.strptime(data['died_date'].replace('xx', '01')[0:10], '%Y-%m-%d')
-                date_diff = date - died_date
-                date_diff = abs(date_diff)
-                # date_close_to_death = date_diff < self.max_time_diff
-        except Exception:
-            pass
-
-        firstnames = data['firstname'].split(' ')
-        for k, v in enumerate(firstnames):
-            if k > 0:
-                firstnames[k] = '(\W+' + re.escape(v) + ')?'
-            else:
-                firstnames[k] = re.escape(v)
-
-        firstnames = ''.join(firstnames)
-
-        to_check_names = [
-         #   '(?<!\w)' + re.escape(data['firstname'][0]) + '.?\W+' + re.escape(data['lastname'])  + '(?!\w)',
-            '(?<!\w)' + firstnames + '\W+' + re.escape(data['lastname'])  + '(?!\w)',
-            '(?<!\w)' + re.escape(data['lastname']) + '\W+' + firstnames + '(?!\w)'
-        ]
-
-        for name in to_check_names:
-            if re.search(name, data['entity'], re.IGNORECASE):
-                return 99999 if date_diff == None else date_diff.days
-
-        return False
-
     def get_results(self, name1, name2):
         try:
-            s = select([self.table]).where(or_(
-                self.table.c.entity.like('%' + str(name2) + '%' + str(name1) + '%'),
-                self.table.c.entity.like('%' + str(name1) + '%' + str(name2) + '%')
-                )
-            )
+            name1 = normalize(name1)
+            name2 = normalize(name2)
+            t1 = self.table
+            t2 = self.table.alias()
+            s = select([t1.c.entity_full, t2.c.entity_full, t1.c.pid]).where(
+                        and_(
+                            t1.c.entity == name1,
+                            t2.c.entity == name2,
+                            t1.c.id == t2.c.id,
+                            func.abs(t1.c.index - t2.c.index) < 5
+                        )
+                    )
+            # print('Query %s\n' % str(s))
             return self.db.execute(s)
         except Exception as e:
             print(e)
