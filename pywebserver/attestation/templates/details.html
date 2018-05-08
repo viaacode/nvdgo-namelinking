@@ -58,6 +58,8 @@
    <script>
     // d3.selectAll('img.alto-image').call(alto);
      $(function () {
+	
+         $('#previews').css('height', window.innerHeight + 'px');
          var images = [];
          $('img.preview').each(function () {
             images.push({
