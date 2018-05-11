@@ -103,3 +103,4 @@ ENV/
 config.ini
 .DS_Store
 db.sqlite3
+.idea

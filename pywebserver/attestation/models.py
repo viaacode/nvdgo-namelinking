@@ -1,15 +1,27 @@
 from django.db import models
 
 
+#from psqlextra.models import PostgresModel
+
 class Link(models.Model):
-    id = models.CharField(max_length=100, primary_key=True)
-    article_id = models.CharField(max_length=50)
-    entity = models.CharField(max_length=300)
-    article_date = models.CharField(max_length=300)
-    title = models.CharField(max_length=300)
-    firstname = models.CharField(max_length=300)
-    lastname = models.CharField(max_length=300)
-    nmlid = models.CharField(max_length=300)
-    status = models.CharField(max_length=3)
-    kind = models.CharField(max_length=300)
-    extras = models.CharField(max_length=300)
+    UNDEFINED = 0
+    MATCH = 1
+    NO_MATCH = 2
+    UNCERTAIN = 3
+
+    STATUS_CHOICES = (
+        (UNDEFINED, 'Not yet determined'),
+        (MATCH, 'Match'),
+        (NO_MATCH, 'No match'),
+        (UNCERTAIN, 'Unknown')
+    )
+
+    pid = models.CharField(max_length=26, db_index=True, default='')
+    nmlid = models.CharField(max_length=300, default='')
+    entity = models.CharField(max_length=300, default='')
+    status = models.IntegerField(choices=STATUS_CHOICES, default=UNDEFINED, db_index=True)
+    kind = models.CharField(max_length=300, default='')
+    extras = models.CharField(max_length=300, default='')
+
+    class Meta:
+        unique_together = (("pid", "nmlid"),)

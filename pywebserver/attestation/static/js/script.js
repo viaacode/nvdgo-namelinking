@@ -1,5 +1,5 @@
 var get_url_archief = function (d) {
-  return '/attestation/info/' + d['article_id'] + '/' + d['nmlid'] + '/' + d['entity'].replace(/\s+/, '/');
+  return '/attestation/info/' + d['pid'] + '/' + d['nmlid'] + '/' + d['entity'].replace(/\s+/, '/');
 };
 
 var get_url_namenlijst = function (d) {
@@ -39,7 +39,7 @@ d3.text('loading').then(function (d) {
 
 var tabulate = function (data) {
   var table = d3.select('#csvtable');
-  var columns = ['status', /*'score', 'days_diff', */ 'firstname', 'lastname', 'entity', 'title'];
+  var columns = ['status', 'entity', 'pid'];
   var thead = table.select('thead');
   var tbody = table.select('tbody');
   var iframes = ['archief', 'namenlijst'];
@@ -120,17 +120,12 @@ var tabulate = function (data) {
     .append('td')
       .html(function (d) {
         switch (d.column) {
-          case 'firstname':
-          case 'lastname':
-            return '<a href="' + escape(get_url_namenlijst(d.row)) + '" target="namenlijst">' +
-                    escape(d.value) +
-                    '</a>';
-          case 'title':
+          case 'pid':
 
-            return '<a title="' + escape(d.row.article_id) +
+            return '<a title="' + escape(d.row.pid) +
                     '" href="' + escape(get_url_archief(d.row)) + '" target="archief">' +
                     escape(d.value) +
-                    '</a>, pid ' + escape(d.row.article_id) + ', pagina ' + d.row.page;
+                    '</a>, pid ' + escape(d.row.pid) + ', pagina ' + d.row.page;
           case 'status':
             if (d.value == '') {
               return '<div class="pure-button-group" role="group" aria-label="Status">' +
@@ -188,21 +183,11 @@ jsonrpc('get_items', {amount: 100}).then(function (data) {
   })
 
   data.map(function (a) {
-      a['score'] = Math.min(
-        Levenshtein.get(a.firstname + ' ' + a.lastname, a.entity),
-        Levenshtein.get(a.lastname + ' ' + a.firstname, a.entity)
-      );
-      a['page'] = parseInt(a.article_id.substring(a.article_id.length-4).replace(/^0/s, ''))
+      a['page'] = parseInt(a.pid.substring(a.pid.length-4).replace(/^0/s, ''));
       return a;
   })
 
-  tabulate(data.sort(function(a,b) {
-    if (a.score == b.score) {
-      return Math.random(-1, 1);
-      // return a.lastname > b.lastname ? 1 : a.lastname < b.lastname ? -1 : a.firstname > b.firstname ? 1 : -1;
-    }
-    return a.score - b.score;
-  }));
+  tabulate(data);
 
   d3.select('table tbody tr').select(function (){this.click();});
   var $form = d3.select('#update-item');
