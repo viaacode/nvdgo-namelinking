@@ -7,6 +7,7 @@ from sqlalchemy import Table, MetaData, create_engine
 
 from progress.bar import ShadyBar
 import configparser
+from tqdm import tqdm
 
 import sys
 
@@ -25,6 +26,7 @@ def has_arg(*args):
     sys.argv = args
     return exists
 
+
 debug = has_arg('--debug', '-d')
 clear_db = has_arg('--clear')
 
@@ -35,21 +37,21 @@ if not debug:
     table = meta.tables[config['db']['table_name']]
 
 start = 0
-if (len(sys.argv) > 1):
+if len(sys.argv) > 1:
    start = int(sys.argv[1])
 
 data = mh.search('+(workflow:GMS) +(archiveStatus:on_tape)', start)
 # data.set_length(500) # debugging
 
-bar = ShadyBar('', max=len(data), suffix = '%(index)d/%(max)d - %(percent).1f%% - elapsed %(elapsed_td)s - eta %(eta_td)s')
-for i in range(start):
-    bar.next()
+#bar = tqdm(total=len(data) - start) # ShadyBar('', max=len(data), suffix = '%(index)d/%(max)d - %(percent).1f%% - elapsed %(elapsed_td)s - eta %(eta_td)s')
+#for i in range(start):
+#    bar.next()
 
 # truncate table first
 if not debug and clear_db:
     db.execute(table.delete())
 
-for idx, item in enumerate(data):
+for idx, item in tqdm(enumerate(data), total=len(data) - start):
     text = item['description']
     entities = ner.tag(text)
     #if debug:
@@ -65,8 +67,7 @@ for idx, item in enumerate(data):
         'index': text_index
     } for text_index, e in enumerate(entities) if e[1] != 'O']
     if debug:
-        print('\n'.join(['\t'.join([str(r) for r in rows])]))
+        pass
+        # print('\n'.join(['\t'.join([str(r) for r in rows])]))
     elif len(rows):
         db.execute(table.insert(), rows)
-    bar.next()
-bar.finish()

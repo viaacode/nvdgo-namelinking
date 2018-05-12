@@ -34,42 +34,6 @@
    </div>
  </div>
 
-
- <div class="modal" id="modal">
-   <input id="modal-trigger" class="checkbox" type="checkbox">
-   <div class="modal-overlay">
-     <label for="modal-trigger" class="o-close"></label>
-     <div class="modal-wrap">
-       <label for="modal-trigger" class="close">&#10006;</label>
-       <h2>Markeer dit item als "<span id="new-status"></span>"</h2>
-       <form id="update-item" class="pure-form pure-form-stacked" method="post" action="/api/jsonrpc">
-           <fieldset>
-               <!-- legend>Confirm the status of this item.</legend -->
-
-               <input type="hidden" name="id">
-               <input type="hidden" name="status">
-
-               <label for="title">Titel</label>
-               <input class="pure-input-1 pure-input-text" type="text" name="title" disabled="disabled">
-
-               <label for="entity">Gematchte naam in OCR</label>
-               <input class="pure-input-1 pure-input-text" type="text" name="entity" disabled="disabled">
-
-               <label for="kind">Soort match (bvb. "Burg. stand: overlijden", "Artikel", ...)</label>
-               <input class="awesomplete pure-input-2-3 pure-input-rounded" type="text" name="kind" id="autosuggestkind">
-
-               <label for="extras">Extra info (vrij veld voor opmerkingen)</label>
-               <input class="pure-input-1" type="text" name="extras">
-
-               <div class="pure-button-group">
-                 <button type="submit" class="pure-button pure-button-primary">Update</button>
-                 <button type="reset" class="pure-button pure-button-primary red">Cancel</button>
-               </div>
-           </fieldset>
-       </form>
-     </div>
-   </div>
- </div>
    <script src="{% static "js/script.js" %}"></script>
  </body>
 </html>

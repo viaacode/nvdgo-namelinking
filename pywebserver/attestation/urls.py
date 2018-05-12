@@ -8,8 +8,8 @@ urlpatterns = [
    path('', views.index, name='index'),
    path('loading', views.loading, name='loading'),
    # path('details/<pid>', views.details, name='details'),
-   url('^details/(?P<pid>[^/]+)/(?P<nmlid>[^/]+)/(?P<words>.+)$', views.detailframe, name='detailframe'),
-   url('^info/(?P<pid>[^/]+)/(?P<nmlid>[^/]+)/(?P<words>.+)$', views.details, name='details'),
+   # url('^details/(?P<pid>[^/]+)/(?P<nmlid>[^/]+)/(?P<words>.+)$', views.detailframe, name='detailframe'),
+   url('^info/(?P<pid>[^/]+)/(?P<nmlid>[^/]+)/(?P<words>.+)$', views.info, name='info'),
 ]
 
 @api.dispatcher.add_method

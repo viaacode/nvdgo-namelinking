@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+ <head>
+   <meta charset="utf-8">
+   <title>{{ title }}</title>
+   <link rel="stylesheet" href="https://unpkg.com/purecss@1.0.0/build/pure-min.css" integrity="sha384-nn4HPE8lTHyVtfCBi5yW9d20FjT8BJwUXyWZT9InLYax14RDjBj46LmSztkmNP9w" crossorigin="anonymous">
+   <link rel="stylesheet" href="{% static "css/alto.css" %}">
+   <link rel="stylesheet" href="{% static "css/style.css" %}">
+   <link href="{% static "css/imageviewer.css" %}"  rel="stylesheet" type="text/css" />
+   <link href="{% static "css/info.css" %}"  rel="stylesheet" type="text/css" />
+   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+   <script src="https://d3js.org/d3.v5.min.js"></script>
+   <script src="{% static "js/imageviewer.js" %}"></script>
+   <link rel="stylesheet" href="{% static "css/awesomplete.css" %}">
+   <script src="{% static "js/awesomplete.js" %}"></script>
+   <script src="{% static "js/escaper.js" %}"></script>
+ </head>
+ <body>
+   <!-- h1><a href="https://hetarchief.be/en/pid/{{ pid|slice:"0:10" }}/{{ pid|slice:"-2:2" }}">{{ pid }}</a></h1>
+   <h2>{{ meta.title }}</h2 -->
+   <table class="pure-table pure-table-striped" style="display:none">
+      <tbody>
+        <tr> <td>Publicatie datum</td> <td>{{ props.carrier_date }}</td> </tr>
+        <tr> <td>Titel</td> <td>{{ meta.title }}</td> </tr>
+        <tr> <td>mediaObjectId</td> <td>{{ meta.mediaObjectId }}</td> </tr>
+        <tr> <td>hetarchief</td> <td><a href="https://hetarchief.be/en/pid/{{ pid|slice:"0:10" }}/{{ pid|slice:"-2:2" }}" target="_blank">
+          https://hetarchief.be/en/pid/{{ pid|slice:"0:10" }}/{{ pid|slice:"-2:2" }}
+       </a></td> </tr>
+        <tr> <td> namenlijst</td> <td><a href="https://database.namenlijst.be/#/person/_id={{ nmlid }}" target="_blank">https://database.namenlijst.be/#/person/_id={{ nmlid }}</a></td></tr>
+        <!-- tr> <td> details</td> <td><a href="{% url 'info' pid nmlid words %}" target="_blank">{% url 'info' pid nmlid words %}</a></td></tr -->
+
+        <!--
+        <tr> <td></td> <td></td> </tr>
+        -->
+      </tbody>
+    </table>
+
+    <div id="previews">
+      <div class="image-container"></div>
+       <img src="{% static "img/left.svg" %}" class="prev" />
+       <img src="{% static "img/right.svg" %}" class="next" />
+       <div class="footer-info">
+          <div class="pure-g">
+              <div class="pure-u-1-3 links">
+                  <div class="pure-menu pure-menu-horizontal">
+                    <ul class="pure-menu-list">
+                      <li class="pure-menu-item">&nbsp;</li>
+                      <li class="pure-menu-item"><a href="https://hetarchief.be/en/pid/{{ pid|slice:"0:10" }}/{{ pid|slice:"-4:"|add:"0" }}" target="_blank" title="Open artikel op hetarchief.be" ><img src="{% static "img/archief-logo.png" %}" alt="" /></a></li>
+                      <li class="pure-menu-item"><a href="https://database.namenlijst.be/#/person/_id={{ nmlid }}" title="Open in IFFM namenlijst" target="_blank"><img src="{% static "img/namenlijst-logo.png" %}" alt="" /></a></li>
+                    </ul>
+                  </div>
+              </div>
+              <div class="pure-u-1-3 pages">
+                   <span class="current"></span>/<span class="total"></span>
+              </div>
+              <div class="pure-u-1-3 buttons">
+                 <div class="pure-button-group" role="group" aria-label="Status">
+                    <button title="Geconfirmeerde match" value="{{ Link.MATCH }}" class="pure-button green">✔</button>
+                    <button title="Onzeker, mogelijke match" value="{{ Link.UNCERTAIN }}" class="pure-button yellow">?</button>
+                    <button title="Geen match" value="{{ Link.NOMATCH }}" class="pure-button red">×</button>
+                 </div>
+              </div>
+          </div>
+       </div>
+    </div>
+
+
+   {% if preview %}<img class="pure-img preview alto-image" src="data:image/jpg;base64,{{ preview }}" alt="{{ pid }}" title="{{ meta.title }}" data-alto="{{ alto }}">{% endif %}
+   {% if preview_full %}
+    <img class="pure-img preview alto-image" src="data:image/jpg;base64,{{ preview_full }}" alt="{{ pid }}" title="{{ meta.title }}" data-alto="{{ alto }}">
+   {% elif previewImageUrl %}
+   <img class="pure-img preview alto-image" src="{{ previewImageUrl }}" alt="{{ pid }}" title="{{ meta.title }}" data-alto="{{ alto }}">
+   {% endif %}
+   {% if preview_confidence %}<img class="pure-img preview" src="data:image/jpg;base64,{{ preview_confidence }}" alt="{{ pid }}" title="{{ meta.title }}">{% endif %}
+
+
+ <div class="modal" id="modal">
+   <input id="modal-trigger" class="checkbox" type="checkbox">
+   <div class="modal-overlay">
+     <label for="modal-trigger" class="o-close"></label>
+     <div class="modal-wrap">
+       <label for="modal-trigger" class="close">&#10006;</label>
+       <h2>Markeer dit item als "<span id="new-status"></span>"</h2>
+       <form id="update-item" class="pure-form pure-form-stacked" method="post" action="/api/jsonrpc">
+           <fieldset>
+               <!-- legend>Confirm the status of this item.</legend -->
+
+               <input type="hidden" name="pid" value="{{ pid }}">
+               <input type="hidden" name="nmlid" value="{{ nmlid }}">
+               <input type="hidden" name="status">
+
+               <label for="entity">Gematchte naam in OCR</label>
+               <input class="pure-input-1 pure-input-text" type="text" name="entity" disabled="disabled" value="{{ entity }}">
+
+               <label for="kind">Soort match (bvb. "Burg. stand: overlijden", "Artikel", ...)</label>
+               <input class="awesomplete pure-input-2-3 pure-input-rounded" type="text" name="kind" id="autosuggestkind">
+
+               <label for="extras">Extra info (vrij veld voor opmerkingen)</label>
+               <input class="pure-input-1" type="text" name="extras">
+
+               <div class="pure-button-group">
+                 <button type="submit" class="pure-button pure-button-primary">Update</button>
+                 <button type="reset" class="pure-button pure-button-primary red">Cancel</button>
+               </div>
+           </fieldset>
+       </form>
+     </div>
+   </div>
+ </div>
+
+   <!-- hr />
+   <pre>
+     {{meta}}
+   </pre -->
+   <script src="{% static "js/alto.js" %}"></script>
+   <script src="{% static "js/jsonrpc.js" %}"></script>
+   <script>
+    // d3.selectAll('img.alto-image').call(alto);
+     $(function () {
+	
+         $('#previews').css('height', window.innerHeight + 'px');
+         var images = [];
+         $('img.preview').each(function () {
+            images.push({
+               small: this.src,
+               big: this.src
+            });
+            $(this).remove();
+         });
+
+         var curImageIdx = 1,
+             total = images.length,
+             wrapper = $('#previews'),
+             curSpan = wrapper.find('.current');
+             viewer = ImageViewer(wrapper.find('.image-container'));
+
+         //display total count
+         wrapper.find('.total').html(total);
+
+         function showImage(){
+             var imgObj = images[curImageIdx - 1];
+             viewer.load(imgObj.small, imgObj.big);
+             curSpan.html(curImageIdx);
+         }
+
+         wrapper.find('.next').click(function(){
+              curImageIdx++;
+             if(curImageIdx > total) curImageIdx = 1;
+             showImage();
+         });
+
+         wrapper.find('.prev').click(function(){
+              curImageIdx--;
+             if(curImageIdx < 0) curImageIdx = total;
+             showImage();
+         });
+
+         //initially show image
+         showImage();
+
+
+
+        function modal(d) {
+          document.getElementById('modal-trigger').click();
+          var tr = d3.select('table tr.active');
+          var src = 'about:blank';
+          tr.select(function(){
+            src = d3.select(this.nextElementSibling).select('a[target="archief"]').attr('href');
+            return this;
+          });
+
+          d3.select('#new-status')
+            .text(d['statusTitle'].charAt(0).toLowerCase() + d['statusTitle'].substr(1))
+            .classed('red green yellow', false)
+            .classed(d['statusColor'], true);
+
+          var $this = d3.select('#modal');
+
+          for (var k in d) {
+            var el = d3.select('#update-item').select('input[name="' + k + '"]');
+            if (el.size()) {
+              el.property('value', d[k]);
+            }
+          }
+
+        }
+
+          $('.buttons button').click(function (e) {
+            d = {
+              pid: "{{ pid }}",
+              nmlid: "{{ nmlid }}"
+            };
+            d.status = this.value;
+            d.statusTitle = this.title;
+            d.statusColor = this.classList[this.classList.length - 1];
+            modal(d);
+          });
+
+
+          jsonrpc('get_kinds').then(function (d) {
+            new Awesomplete(document.getElementById("autosuggestkind"), {
+              list: d.result,
+              minChars: 0
+            });
+          });
+
+          var $form = d3.select('#update-item');
+
+          $form.on('submit', function () {
+            d3.event.preventDefault();
+            $form.select('input[type="submit"]').property('disabled', true);
+            var tr = d3.select('table tr.active');
+            tr.select(function(){this.nextElementSibling.click();return this;});
+
+            var data = new FormData(document.getElementById('update-item'));
+            jsonrpc('update_item', data)
+              .then(function (d) {
+                document.getElementById('modal-trigger').click();
+                if (typeof(d) !== 'object' || typeof(d.success) === 'undefined' || !d.success) {
+                  alert('ERROR');
+                }
+                $form.select('input[type="submit"]').property('disabled', false);
+              });
+          });
+
+          d3.select('button[type="reset"]').on('click', function () {
+            document.getElementById('modal-trigger').click();
+          });
+
+     });
+   </script>
+ </body>
+</html>

@@ -45,12 +45,13 @@ table#csvtable tr td:first-child {
 }
 
 .iframes {
-  height: 80vh;
+  height: 100vh;
 }
 
 .pure-g.table {
   overflow-y: scroll;
   height: 20vh;
+  display: none;
 }
 
 .iframes iframe {

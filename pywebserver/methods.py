@@ -3,7 +3,7 @@ import io
 import base64
 from django.core.cache import caches
 from django.core.cache.backends.base import InvalidCacheBackendError
-import json as js
+
 
 def get_cache(name):
     try:

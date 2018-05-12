@@ -26,6 +26,7 @@
   cursor: pointer;
 }
 #previews .footer-info {
+  background-color: gray;
   position: absolute;
   height: 50px;
   width: 100%;
@@ -33,7 +34,17 @@
   bottom: 0;
   line-height: 50px;
   font-size: 24px;
-  text-align: center;
   color: white;
   border-top: 1px solid #FFF;
+}
+
+#previews .footer-info .pages {
+    text-align: center;
+}
+
+#previews .footer-info .buttons {
+    text-align: right;
+}
+.footer-info img {
+    height: 28px;
 }

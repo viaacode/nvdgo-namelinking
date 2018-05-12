@@ -7,31 +7,6 @@ var get_url_namenlijst = function (d) {
 }
 var changes = {};
 
-
-function modal(d) {
-  document.getElementById('modal-trigger').click();
-  var tr = d3.select('table tr.active');
-  var src = 'about:blank';
-  tr.select(function(){
-    src = d3.select(this.nextElementSibling).select('a[target="archief"]').attr('href');
-    return this;
-  });
-
-  d3.select('#new-status')
-    .text(d['statusTitle'].charAt(0).toLowerCase() + d['statusTitle'].substr(1))
-    .classed('red green yellow', false)
-    .classed(d['statusColor'], true);
-
-  var $this = d3.select('#modal');
-
-  for (var k in d) {
-    var el = d3.select('#update-item').select('input[name="' + k + '"]');
-    if (el.size()) {
-      el.property('value', d[k]);
-    }
-  }
-}
-
 var emptySrc = 'data:text/html;charset=utf-8,';
 d3.text('loading').then(function (d) {
   emptySrc += encodeURI(d);
@@ -145,42 +120,10 @@ var tabulate = function (data) {
   return table;
 }
 
-window.jsonrpc = function (method, data) {
-  var obj = {};
-  if (data instanceof FormData) {
-    data.forEach(function(v, k) {
-      obj[k] = v;
-    });
-  } else {
-    obj = data;
-  }
-
-  var body = {
-    method: method,
-    params: obj,
-    id: Date.now(),
-    jsonrpc: "2.0"
-  };
-  var headers = new Headers();
-  headers['Content-Type'] = 'application/json';
-
-  var options = {};
-  options.body = JSON.stringify(body);
-  options.headers = headers;
-  options.method = 'POST';
-  return d3.json('/api/jsonrpc', options);
-}
 
 
 jsonrpc('get_items', {amount: 100}).then(function (data) {
   data = data.result
-
-  jsonrpc('get_kinds').then(function (d) {
-    new Awesomplete(document.getElementById("autosuggestkind"), {
-      list: d.result,
-      minChars: 0
-    });
-  })
 
   data.map(function (a) {
       a['page'] = parseInt(a.pid.substring(a.pid.length-4).replace(/^0/s, ''));
@@ -190,25 +133,5 @@ jsonrpc('get_items', {amount: 100}).then(function (data) {
   tabulate(data);
 
   d3.select('table tbody tr').select(function (){this.click();});
-  var $form = d3.select('#update-item');
-  $form.on('submit', function () {
-    d3.event.preventDefault();
-    $form.select('input[type="submit"]').property('disabled', true);
-    var tr = d3.select('table tr.active');
-    tr.select(function(){this.nextElementSibling.click();return this;});
 
-    var data = new FormData(document.getElementById('update-item'));
-    jsonrpc('update_item', data)
-      .then(function (d) {
-        document.getElementById('modal-trigger').click();
-        if (typeof(d) === 'object' && typeof(d.success) !== 'undefined' && d.success) {
-          tr.style('display', 'none');
-        }
-        $form.select('input[type="submit"]').property('disabled', false);
-      });
-  });
-
-  d3.select('button[type="reset"]').on('click', function () {
-    document.getElementById('modal-trigger').click();
-  });
 });
