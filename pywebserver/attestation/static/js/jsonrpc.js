@@ -1,4 +1,3 @@
-
 window.jsonrpc = function (method, data) {
   var obj = {};
   if (data instanceof FormData) {

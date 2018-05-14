@@ -48,6 +48,7 @@
                       <li class="pure-menu-item">&nbsp;</li>
                       <li class="pure-menu-item"><a href="https://hetarchief.be/en/pid/{{ pid|slice:"0:10" }}/{{ pid|slice:"-4:"|add:"0" }}" target="_blank" title="Open artikel op hetarchief.be" ><img src="{% static "img/archief-logo.png" %}" alt="" /></a></li>
                       <li class="pure-menu-item"><a href="https://database.namenlijst.be/#/person/_id={{ nmlid }}" title="Open in IFFM namenlijst" target="_blank"><img src="{% static "img/namenlijst-logo.png" %}" alt="" /></a></li>
+                      <li class="pure-menu-item entity">{{ entity }} ({{pid|slice:"-13:-5"}})</li>
                     </ul>
                   </div>
               </div>
@@ -58,7 +59,7 @@
                  <div class="pure-button-group" role="group" aria-label="Status">
                     <button title="Geconfirmeerde match" value="{{ Link.MATCH }}" class="pure-button green">✔</button>
                     <button title="Onzeker, mogelijke match" value="{{ Link.UNCERTAIN }}" class="pure-button yellow">?</button>
-                    <button title="Geen match" value="{{ Link.NOMATCH }}" class="pure-button red">×</button>
+                    <button title="Geen match" value="{{ Link.NOMATCH|default:"0" }}" class="pure-button red">×</button>
                  </div>
               </div>
           </div>
@@ -118,8 +119,15 @@
    <script>
     // d3.selectAll('img.alto-image').call(alto);
      $(function () {
-	
-         $('#previews').css('height', window.innerHeight + 'px');
+         var ih = 0,
+             $previews = $('#previews');
+
+	     setInterval(function() {
+	        if (ih != window.innerHeight) {
+	          ih = window.innerHeight;
+              $previews.css('height', ih + 'px');
+            }
+         }, 1000);
          var images = [];
          $('img.preview').each(function () {
             images.push({
@@ -217,8 +225,10 @@
             jsonrpc('update_item', data)
               .then(function (d) {
                 document.getElementById('modal-trigger').click();
-                if (typeof(d) !== 'object' || typeof(d.success) === 'undefined' || !d.success) {
+                if (typeof(d) !== 'object') {
                   alert('ERROR');
+                } else {
+                  window.parent.nextItem(1);
                 }
                 $form.select('input[type="submit"]').property('disabled', false);
               });
@@ -227,8 +237,8 @@
           d3.select('button[type="reset"]').on('click', function () {
             document.getElementById('modal-trigger').click();
           });
-
      });
+
    </script>
  </body>
 </html>

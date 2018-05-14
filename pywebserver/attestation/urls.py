@@ -40,6 +40,5 @@ def get_itemzzs2(amount = 100, request=None):
 @api.dispatcher.add_method
 def get_items(amount=1, request=None):
     from django.forms.models import model_to_dict
-    amount=1
     links = Link.objects.filter(status=Link.UNDEFINED).order_by('?')[0:amount]
     return [model_to_dict(d) for d in links]
