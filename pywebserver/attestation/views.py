@@ -8,14 +8,18 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from io import BytesIO
 
+
 def __render(request, file, context = {}):
     return render(request, file, context=context)
+
 
 def index(request):
     return __render(request, 'index.html')
 
+
 def loading(request):
     return __render(request, 'loading.html')
+
 
 def info(request, pid, nmlid, words=''):
     words = words.split('/')
@@ -27,19 +31,6 @@ def info(request, pid, nmlid, words=''):
     return __render(request, 'info.html', context=context)
 
 
-def img(xs, ys, label=None, title=None):
-    fig = plt.figure(figsize=(8, 3))
-    ax = fig.add_subplot(1, 1, 1)
-    ax.bar(xs, ys, label=label)
-    if title is not None:
-        ax.set_title(title)
-    ax.legend()
-
-    io = BytesIO()
-    fig.savefig(io, format='png')
-    return io.getvalue()
-
-
 def progress(request):
     data = Link.objects.all().values('status').annotate(total=Count('status'))
     notdone_count = [p['total'] for p in data if p['status'] == 0][0]
@@ -49,5 +40,12 @@ def progress(request):
         "count": [p['total'] for p in data]
     }
 
-    png = img(data['status'], data['count'], 'amount', 'Attestation counts (%d not yet done)' % notdone_count)
-    return HttpResponse(png, content_type="image/png")
+    fig = plt.figure(figsize=(5, 8))
+    ax = fig.add_subplot(1, 1, 1)
+    ax.bar(data['status'], data['count'], label='amount')
+    ax.set_title('Attestation counts (%d not yet done)' % notdone_count)
+    ax.legend()
+
+    io = BytesIO()
+    fig.savefig(io, format='png')
+    return HttpResponse(io.getvalue(), content_type="image/png")
