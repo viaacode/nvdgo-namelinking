@@ -112,15 +112,18 @@ class Linker:
             firstnames = set(name for name in map(normalize, firstnames) if len(name) > 1)
             lastnames = set(name for name in map(normalize, lastnames) if len(name) > 1)
 
-            self.counts[row['victim_type']]['ok'] += 1
-            self.counts[row['victim_type']]['alternatives'] += len(firstnames) * len(lastnames) - 2
+            if len(firstnames) == 0 or len(lastnames) == 0:
+                self.counts[row['victim_type']]['skipped'] += 1
+            else:
+                self.counts[row['victim_type']]['ok'] += 1
+                self.counts[row['victim_type']]['alternatives'] += len(firstnames) * len(lastnames) - 1
 
             if not self.counts_only:
                 res = self.get_results(firstnames, lastnames)
                 self.counts[row['victim_type']]['found'] += len(res)
                 Linker.process(res, row, idx)
         else:
-            self.counts[row['victim_type']]['skipped'] += 0
+            self.counts[row['victim_type']]['skipped'] += 1
 
     def worker(self):
         while True:
