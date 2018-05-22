@@ -3,13 +3,13 @@ from .models import Link
 from django.db.models import Count
 from methods import get_info
 from django.http.response import HttpResponse
+from io import BytesIO
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-from io import BytesIO
 
 
-def __render(request, file, context = {}):
+def __render(request, file, context={}):
     return render(request, file, context=context)
 
 
@@ -33,16 +33,14 @@ def info(request, pid, nmlid, words=''):
 
 def progress(request):
     data = Link.objects.all().values('status').annotate(total=Count('status'))
-    notdone_count = [p['total'] for p in data if p['status'] == 0][0]
-    data = [p for p in data if p['status'] != 0]
-    data = {
-        "status": [[l[1] for l in Link.STATUS_CHOICES if l[0] == p['status']][0] for p in data],
-        "count": [p['total'] for p in data]
-    }
+    notdone_count = [p['total'] for p in data if p['status'] == Link.UNDEFINED][0]
+    data = [p for p in data if p['status'] != Link.UNDEFINED]
+    x = [[l[1] for l in Link.STATUS_CHOICES if l[0] == p['status']][0] for p in data]
+    y = [p['total'] for p in data]
 
     fig = plt.figure(figsize=(5, 8))
     ax = fig.add_subplot(1, 1, 1)
-    ax.bar(data['status'], data['count'], label='amount')
+    ax.bar(x, y, label='amount')
     ax.set_title('Attestation counts (%d not yet done)' % notdone_count)
     ax.legend()
 

@@ -20,8 +20,9 @@ class Linker:
     bar = None
     table = None
     counts = dict()
+    max_distance = 5
 
-    def __init__(self, num_worker_threads=10, counts_only=False):
+    def __init__(self, num_worker_threads=10, counts_only=False, debug=False):
         config = configparser.ConfigParser()
         config.read('config.ini')
 
@@ -32,6 +33,7 @@ class Linker:
         self.table = meta.tables[config['db']['table_name']]
 
         self.counts_only = bool(counts_only)
+        self.debug = bool(debug)
 
         self.q = Queue()
 
@@ -54,7 +56,8 @@ class Linker:
             try:
                 entity = r[0] + ' ' + r[1]
                 pid = r[2].strip()
-                Link.objects.get_or_create(nmlid=nmlid, entity=entity, pid=pid)
+
+                Link.objects.update_or_create(nmlid=nmlid, entity=entity, pid=pid, distance=r[3])
             except IntegrityError as e:
                 pass
             except Exception as e:
@@ -77,20 +80,25 @@ class Linker:
             results = []
             for name1 in firstnames:
                 for name2 in lastnames:
-                    # print("Check %s %s" % (name1, name2))
-                    s = select([t1.c.entity_full, t2.c.entity_full, t1.c.pid]).where(
-                        and_(
-                            t1.c.entity == name1,
-                            t2.c.entity == name2,
-                            t1.c.id == t2.c.id,
-                            func.abs(t1.c.index - t2.c.index) < 5,
-                            t1.c.index != t2.c.index
+                    if self.debug:
+                        print("Check %s %s" % (name1, name2))
+                    s = select([
+                            t1.c.entity_full,
+                            t2.c.entity_full,
+                            t1.c.pid,
+                            func.abs(t1.c.index - t2.c.index).label('distance')
+                        ]).where(
+                            and_(
+                                t1.c.entity == name1,
+                                t2.c.entity == name2,
+                                t1.c.id == t2.c.id,
+                                func.abs(t1.c.index - t2.c.index) < self.max_distance,
+                                t1.c.index != t2.c.index
+                            )
                         )
-                    )
                     results.extend(self.db.execute(s))
-            # print('Query %s\n' % str(s))
-            # if len(results):
-            #     print(results)
+            if self.debug and len(results):
+                print(results)
             return results
         except Exception as e:
             print(e)
@@ -120,7 +128,8 @@ class Linker:
 
             if not self.counts_only:
                 res = self.get_results(firstnames, lastnames)
-                self.counts[row['victim_type']]['found'] += len(res)
+                if res is not None:
+                    self.counts[row['victim_type']]['found'] += len(res)
                 Linker.process(res, row, idx)
         else:
             self.counts[row['victim_type']]['skipped'] += 1
@@ -137,6 +146,9 @@ def run(*args):
     if 'counts' in args:
         print('Warning: will check counts only, will not attempt to do lookups!')
 
+    if 'debug' in args:
+        print('Warning: debug mode')
+
     document = {
         # "died_year": 1914
     }
@@ -147,6 +159,6 @@ def run(*args):
 
     people = Namenlijst().findPerson(document=document, options=options)
 
-    linking = Linker(10, counts_only='counts' in args)
+    linking = Linker(10, counts_only='counts' in args, debug='debug' in args)
     linking.start(people)
     print(linking.counts)

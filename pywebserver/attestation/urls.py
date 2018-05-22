@@ -40,5 +40,5 @@ def get_itemzzs2(amount = 100, request=None):
 
 @api.dispatcher.add_method
 def get_items(amount=1, request=None):
-    links = Link.objects.filter(status=Link.UNDEFINED).order_by('?')[0:amount]
+    links = Link.objects.filter(status=Link.UNDEFINED, distance__level__lte=2).order_by('?')[0:amount]
     return [model_to_dict(d) for d in links]

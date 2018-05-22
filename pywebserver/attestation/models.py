@@ -19,6 +19,7 @@ class Link(models.Model):
     pid = models.CharField(max_length=26, db_index=True, default='')
     nmlid = models.CharField(max_length=300, default='')
     entity = models.CharField(max_length=300, default='')
+    distance = models.PositiveSmallIntegerField(default=0)
     status = models.IntegerField(choices=STATUS_CHOICES, default=UNDEFINED, db_index=True)
     kind = models.CharField(max_length=300, default='')
     extras = models.CharField(max_length=300, default='')
