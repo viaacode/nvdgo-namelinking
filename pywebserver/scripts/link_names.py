@@ -56,9 +56,8 @@ class Linker:
             try:
                 entity = r[0] + ' ' + r[1]
                 pid = r[2].strip()
-
-                Link.objects.update_or_create(nmlid=nmlid, entity=entity, pid=pid, distance=r[3])
-            except IntegrityError as e:
+                Link.objects.get_or_create(nmlid=nmlid, entity=entity, pid=pid, distance=r[3])
+            except IntegrityError:
                 pass
             except Exception as e:
                 print('[%d] err for %s: %s' % (idx, nmlid, e))
@@ -159,6 +158,6 @@ def run(*args):
 
     people = Namenlijst().findPerson(document=document, options=options)
 
-    linking = Linker(10, counts_only='counts' in args, debug='debug' in args)
+    linking = Linker(10 if 'consecutive' not in args else 1, counts_only='counts' in args, debug='debug' in args)
     linking.start(people)
     print(linking.counts)

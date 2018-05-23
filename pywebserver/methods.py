@@ -12,7 +12,7 @@ def get_cache(name):
         return caches['default']
 
 
-def get_info(pid, words = []):
+def get_info(pid, words=[]):
     def b64img(im):
         data = io.BytesIO()
         im.save(data, format='JPEG')
@@ -32,7 +32,7 @@ def get_info(pid, words = []):
     result['alto'] = im.get_words(words)
     
     if len(words):
-        result['preview_full'] = b64img(im.highlight_words(words, crop = False))
+        result['preview_full'] = b64img(im.highlight_words(words, crop=False))
         result['preview'] = b64img(im.highlight_words(words))
 
     # result['preview_confidence_full'] = b64img(im.highlight_confidence())
