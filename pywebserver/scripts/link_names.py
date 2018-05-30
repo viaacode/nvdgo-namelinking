@@ -6,6 +6,7 @@ from sqlalchemy import MetaData, create_engine, and_, func
 from sqlalchemy.sql import select
 from queue import Queue
 from threading import Thread
+from django.db import IntegrityError
 
 from pythonmodules.namenlijst import Namenlijst
 from pythonmodules.ner import normalize
@@ -79,8 +80,10 @@ class Linker:
                 entity = ' '.join(r[1:])
                 uq = dict(nmlid=nmlid, entity=entity, pid=pid)
                 self.log.debug(uq)
-                if not Link.objects.filter(**uq).exists():
-                    Link.objects.create(**uq)
+                # if not Link.objects.filter(**uq).exists():
+                Link.objects.create(**uq)
+            except IntegrityError:
+                pass
             except Exception as e:
                 self.log.error('[%d] err for %s: %s' % (idx, nmlid, e))
 

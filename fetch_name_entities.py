@@ -41,7 +41,7 @@ if not debug:
 start = 0
 if len(sys.argv) > 1:
     if sys.argv[1] in ['--continue', '-c']:
-        start = db.execute(func.max(table.c.id)).scalar()
+        start = db.execute(func.max(table.c.id)).scalar() + 1
     else:
         start = int(sys.argv[1])
 
