@@ -184,8 +184,7 @@ def run(*args):
     logger = logging.getLogger('link_names')
     logger.setLevel(logging.INFO)
     logger.addHandler(logging.FileHandler('link_names.log'))
-    if len(args):
-        logger.info('running with arguments %s' % (' "%s"' * len(args)), *args)
+    logger.info('running with arguments: %s' % (' "%s"' * len(args)), *args)
 
     if 'counts' in args:
         logger.info('will check counts only, will not attempt to do lookups!')
@@ -215,12 +214,12 @@ def run(*args):
 
     people = Namenlijst().findPerson(document=document, options=options)
 
-    if args[0].isdigit():
+    if len(args) and args[0].isdigit():
         logger.info('will only do first %s' % args[0])
         if len(people) > int(args[0]):
             people = GeneratorLimit(people, int(args[0]))
 
-    linking = Linker(10 if 'consecutive' not in args else 1,
+    linking = Linker(5 if 'consecutive' not in args else 1,
                      counts_only='counts' in args,
                      no_skips='no-skips' in args)
     linking.start(people)
