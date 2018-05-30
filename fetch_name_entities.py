@@ -3,9 +3,9 @@
 from pythonmodules.mediahaven import MediaHaven
 from pythonmodules.ner import NERFactory, normalize
 
-from sqlalchemy import Table, MetaData, create_engine
+from sqlalchemy import MetaData, create_engine
+from sqlalchemy.sql.expression import func
 
-from progress.bar import ShadyBar
 import configparser
 from tqdm import tqdm
 
@@ -40,15 +40,14 @@ if not debug:
 
 start = 0
 if len(sys.argv) > 1:
-    start = int(sys.argv[1])
+    if sys.argv[1] in ['--continue', '-c']:
+        start = db.execute(func.max(table.c.id)).scalar()
+    else:
+        start = int(sys.argv[1])
 
 data = mh.search('+(workflow:GMS) +(archiveStatus:on_tape)', start)
 
 # data.set_length(500) # debugging
-
-# bar = tqdm(total=len(data) - start) # ShadyBar('', max=len(data), suffix = '%(index)d/%(max)d - %(percent).1f%% - elapsed %(elapsed_td)s - eta %(eta_td)s')
-# for i in range(start):
-#     bar.next()
 
 # truncate table first
 if not debug and clear_db:

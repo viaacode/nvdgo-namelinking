@@ -48,8 +48,6 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django_extensions',
     'attestation.apps.AttestationConfig',
-#    'django.contrib.postgres',
-#    'psqlextra'
 ]
 
 MIDDLEWARE = [

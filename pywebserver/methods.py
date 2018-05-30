@@ -12,10 +12,10 @@ def get_cache(name):
         return caches['default']
 
 
-def get_info(pid, words=[]):
+def get_info(pid, words=None):
     def b64img(im):
         data = io.BytesIO()
-        im.save(data, format='JPEG')
+        im.save(data, format='JPEG', quality=85)
         return base64.b64encode(data.getvalue()).decode()
 
     cache = get_cache('MediaHaven')
@@ -23,7 +23,7 @@ def get_info(pid, words=[]):
     mh.set_cache(cache)
     result = {
         "pid": pid,
-        "words": len(words),
+        "words": len(words) if words is not None else 0,
     }
 
     im = mh.get_preview(pid).open()
@@ -31,7 +31,7 @@ def get_info(pid, words=[]):
     result['meta'] = im.meta
     result['alto'] = im.get_words(words)
     
-    if len(words):
+    if result['words'] > 0:
         result['preview_full'] = b64img(im.highlight_words(words, crop=False))
         result['preview'] = b64img(im.highlight_words(words))
 
