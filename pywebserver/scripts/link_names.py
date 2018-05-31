@@ -11,9 +11,29 @@ from django.db import IntegrityError
 from pythonmodules.namenlijst import Namenlijst
 from pythonmodules.ner import normalize
 
-from attestation.models import Link
+from attestation.models import LinkNew as Link, Link as LinkForSkips
 from tqdm import tqdm
 import logging
+
+import time
+
+
+class timeit:
+    logger = logging.getLogger('timeit')
+    logger.setLevel(logging.INFO)
+
+    def __init__(self, text=None, min_time=None):
+        self.text = text
+        self.min_time = min_time
+
+    def __enter__(self):
+        self.start = time.monotonic()
+        return self.start
+
+    def __exit__(self, type, value, traceback):
+        ms = ((time.monotonic() - self.start)*1000)
+        if self.min_time is None or ms > self.min_time:
+            self.logger.info(self.text + ': %dms' % ms)
 
 
 class Linker:
@@ -25,7 +45,7 @@ class Linker:
     skip_if_higher_than_count = 200
     to_skip = []
 
-    def __init__(self, num_worker_threads=10, counts_only=False, no_skips=False):
+    def __init__(self, num_worker_threads=10, counts_only=False, no_skips=False, no_write=False):
         self.log = logging.getLogger('link_names')
         config = configparser.ConfigParser()
         config.read('config.ini')
@@ -37,25 +57,12 @@ class Linker:
         self.table = meta.tables[config['db']['table_name']]
 
         if not no_skips:
-            to_skip_query = '''
-            select 
-                max(b.entity), res.id, max(res.c) as linkscount 
-            from 
-                (select 
-                    count(a.id) as c, a.nmlid as id   
-                from attestation_link a
-                group by a.nmlid
-                having count(a.id) > %d
-                order by c desc) as res,
-                attestation_link b
-            where res.id = b.nmlid
-            group by res.id
-            order by linkscount DESC
-            ''' % self.skip_if_higher_than_count
-
-            self.to_skip = [row[1] for row in self.db.execute(to_skip_query)]
+            self.to_skip = set(LinkForSkips.objects.filter(status=LinkForSkips.SKIP)
+                                           .order_by('nmlid').values_list('nmlid', flat=True)
+                                           .distinct())
 
         self.counts_only = bool(counts_only)
+        self.no_write = bool(no_write)
         self.log.info('found %d nmlids to skip' % len(self.to_skip))
 
         self.q = Queue()
@@ -81,7 +88,9 @@ class Linker:
                 uq = dict(nmlid=nmlid, entity=entity, pid=pid)
                 self.log.debug(uq)
                 # if not Link.objects.filter(**uq).exists():
-                Link.objects.create(**uq)
+                if not self.no_write:
+                    with timeit('create %s' % str(uq), 200):
+                        Link.objects.create(**uq)
             except IntegrityError:
                 pass
             except Exception as e:
@@ -100,23 +109,27 @@ class Linker:
             results = set()
             for name1 in firstnames:
                 for name2 in lastnames:
-                    tables = [self.table]
-                    selects = [tables[0].c.pid, tables[0].c.entity_full]
-                    conditions = [tables[0].c.entity == name1]
-                    prevalias = tables[0]
+                    selects = [self.table.c.pid, self.table.c.entity_full]
+                    conditions = [self.table.c.entity == name1]
+                    prevalias = self.table
+                    joins = []
                     for word in name2.split(' '):
                         alias = self.table.alias()
-                        tables.append(alias)
+                        distances = [prevalias.c.index - i for i in range(1, self.max_distance)]
+                        distances.extend([prevalias.c.index + i for i in range(1, self.max_distance)])
+                        joins.append((alias, and_(self.table.c.id == alias.c.id, alias.c.index.in_(distances))))
                         selects.append(alias.c.entity_full)
-                        # selects.append(func.abs(prevalias.c.index - alias.c.index).label('distance'))
                         conditions.append(alias.c.entity == word)
-                        conditions.append(prevalias.c.id == alias.c.id)
-                        conditions.append(func.abs(prevalias.c.index - alias.c.index) < self.max_distance)
-                        conditions.append(prevalias.c.index != alias.c.index)
                         prevalias = alias
 
-                    s = select(selects).where(and_(*conditions))
-                    rows = [tuple(row) for row in self.db.execute(s).fetchall()]
+                    with timeit(' '.join([nmlid, name1, name2]), 500):
+                        s = select(selects) # .select_from(self.table)
+                        join = self.table
+                        for x in joins:
+                            join = join.join(*x)
+                        s = s.select_from(join)
+                        s = s.where(and_(*conditions))
+                        rows = [tuple(row) for row in self.db.execute(s).fetchall()]
                     self.log.debug("%s, check: %s %s, %d results", nmlid, name1, name2, len(rows))
                     if len(rows):
                         results = results.union(rows)
@@ -186,7 +199,9 @@ class GeneratorLimit(object):
 def run(*args):
     logger = logging.getLogger('link_names')
     logger.setLevel(logging.INFO)
-    logger.addHandler(logging.FileHandler('link_names.log'))
+    log_file_handler = logging.FileHandler('link_names.log')
+    logger.addHandler(log_file_handler)
+    timeit.logger.addHandler(log_file_handler)
     logger.info('running with arguments: %s' % (' "%s"' * len(args)), *args)
 
     if 'counts' in args:
@@ -202,14 +217,19 @@ def run(*args):
     if 'no-skips' in args:
         logger.info('will not skip frequent names')
 
-    if 'debug-sql' in args:
-        logger.info('will show some sql debug info')
-        logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
+    if 'no-write' in args:
+        logger.info('don\'t write results to db')
 
     document = {
         # '_id': '4a7795fd-6fa0-4dc3-bcc3-4ee82c371077'
         # "died_year": 1914
     }
+
+    ids = [a for a in args if a[0:3] == 'id:']
+    if len(ids):
+        document['_id'] = ids[0][3:]
+        logger.info('will only check %s' % document['_id'])
+
     options = [
         # 'EXTEND_DIED_PLACE',
         # 'EXTEND_DIED_DATE'
@@ -224,6 +244,12 @@ def run(*args):
 
     linking = Linker(5 if 'consecutive' not in args else 1,
                      counts_only='counts' in args,
-                     no_skips='no-skips' in args)
+                     no_skips='no-skips' in args,
+                     no_write='no-write' in args)
+
+    if 'debug-sql' in args:
+        logger.info('will show some sql debug info')
+        logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
+
     linking.start(people)
     logger.info(linking.counts)

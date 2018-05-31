@@ -1,7 +1,7 @@
 from django.db import models
 
 
-class Link(models.Model):
+class LinkBase(models.Model):
     UNDEFINED = 0
     MATCH = 1
     NO_MATCH = 2
@@ -25,3 +25,12 @@ class Link(models.Model):
 
     class Meta:
         unique_together = (("pid", "nmlid"),)
+        abstract = True
+
+
+class Link(LinkBase):
+    pass
+
+
+class LinkNew(LinkBase):
+    pass
