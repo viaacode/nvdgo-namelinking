@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from .models import Link
 from django.db.models import Count
-from methods import get_info
+from lib.previews import get_info
 from django.http.response import HttpResponse
 from io import BytesIO
 import matplotlib
@@ -34,7 +34,7 @@ def info(request, pid, nmlid, words=''):
 def progress(request):
     data = Link.objects.all().values('status').annotate(total=Count('status'))
     notdone_count = [p['total'] for p in data if p['status'] == Link.UNDEFINED][0]
-    data = [p for p in data if p['status'] != Link.UNDEFINED]
+    data = [p for p in data if p['status'] not in [Link.UNDEFINED, Link.SKIP]]
     x = [[l[1] for l in Link.STATUS_CHOICES if l[0] == p['status']][0] for p in data]
     y = [p['total'] for p in data]
 

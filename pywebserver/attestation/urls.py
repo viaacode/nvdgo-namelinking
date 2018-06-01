@@ -3,7 +3,7 @@ from django.conf.urls import url
 from . import views
 from .models import Link
 from jsonrpc.backend.django import api
-from methods import get_info
+from lib.previews import get_info
 from django.forms.models import model_to_dict
 
 urlpatterns = [
