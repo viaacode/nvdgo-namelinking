@@ -1,10 +1,9 @@
 # coding: utf-8
 
-from pythonmodules.namenlijst import Namenlijst
 from pythonmodules.profiling import timeit
-from lib.linker import Linker
-from lib.helpers import GeneratorLimit
 import logging
+from lib.linker import Linker, Datasources, AttributeMapper
+from lib.helpers import GeneratorLimit
 
 
 def run(*args):
@@ -46,7 +45,15 @@ def run(*args):
         # 'EXTEND_DIED_DATE'
     ]
 
-    people = Namenlijst().findPerson(document=document, options=options)
+    datasource = [k for k, v in Datasources.items() if k in args]
+    if len(datasource):
+        datasource = datasource[0]
+    else:
+        datasource = 'namenlijst'
+
+    logger.info("Using datasource '%s'" % datasource)
+    datasource = Datasources[datasource]
+    people = datasource['func'](document=document, options=options)
 
     if len(args) and args[0].isdigit():
         logger.info('will only do first %s' % args[0])
@@ -56,7 +63,8 @@ def run(*args):
     linking = Linker(5 if 'consecutive' not in args else 1,
                      counts_only='counts' in args,
                      no_skips='no-skips' in args,
-                     no_write='no-write' in args)
+                     no_write='no-write' in args,
+                     table=datasource['table'] if 'table' in datasource else None)
 
     if 'debug-sql' in args:
         logger.info('will show some sql debug info')

@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from .models import Link
+from . import models
 from django.db.models import Count
 from lib.previews import get_info
 from django.http.response import HttpResponse
@@ -8,36 +8,61 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
+DEFAULT_MODEL = 'namenlijst'
+
+
+def get_model(model=None):
+    if model is None:
+        model = DEFAULT_MODEL
+    model = 'Link%s' % model.title()
+    return models.__dict__[model]
+
 
 def __render(request, file, context={}):
     return render(request, file, context=context)
 
 
-def index(request):
-    return __render(request, 'index.html')
+def index(request, model=None):
+    if model is None:
+        model = DEFAULT_MODEL
+    return __render(request, 'index.html', context={"model": model})
 
 
 def loading(request):
     return __render(request, 'loading.html')
 
 
-def info(request, pid, nmlid, words=''):
+def info(request, pid, nmlid, words='', model=None):
     words = words.split('/')
     context = get_info(pid, words)
     context['nmlid'] = nmlid
     context['alto'] = context['alto'].jsonserialize()
-    context['Link'] = Link
+    context['model'] = model if model is not None else DEFAULT_MODEL
+    context['Link'] = get_model(model)
     context['entity'] = ' '.join(words)
+    obj = context['Link'].objects.filter(nmlid=nmlid, pid=pid).first()
+    if obj:
+        context['status'] = obj.status
+        context['kind'] = obj.kind
+        context['extras'] = obj.extras
+        context['url'] = obj.url()
+    else:
+        context['status'] = model.UNDEFINED
+        context['url'] = ''
+
     return __render(request, 'info.html', context=context)
 
 
-def progress(request):
-    data = Link.objects.all().values('status').annotate(total=Count('status'))
-    notdone_count = [p['total'] for p in data if p['status'] == Link.UNDEFINED][0]
-    data = [p for p in data if p['status'] not in [Link.UNDEFINED, Link.SKIP]]
-    x = [[l[1] for l in Link.STATUS_CHOICES if l[0] == p['status']][0] for p in data]
+def progress(request, model=None):
+    model = get_model(model)
+    data = model.objects.all().values('status').annotate(total=Count('status'))
+    notdone_count = [p['total'] for p in data if p['status'] == model.UNDEFINED][0]
+    data = [p for p in data if p['status'] not in [model.UNDEFINED, model.SKIP]]
+    x = [[l[1] for l in model.STATUS_CHOICES if l[0] == p['status']][0] for p in data]
     y = [p['total'] for p in data]
-
+    if len(data) is 0:
+        x = [k[1] for k in model.STATUS_CHOICES if k[0] == model.UNDEFINED]
+        y = [notdone_count]
     fig = plt.figure(figsize=(5, 8))
     ax = fig.add_subplot(1, 1, 1)
     ax.bar(x, y, label='amount')

@@ -2,7 +2,7 @@
 
 import configparser
 
-from sqlalchemy import MetaData, create_engine, and_, func
+from sqlalchemy import MetaData, create_engine, and_
 from sqlalchemy.sql import select
 from queue import Queue
 from threading import Thread
@@ -11,12 +11,44 @@ from pythonmodules.ner import normalize
 from pythonmodules.decorators import classcache
 from pythonmodules.cache import LocalCacher
 
-from attestation.models import LinkNew as Link, Link as LinkForSkips
+import attestation.models as models
 
 from pythonmodules.profiling import timeit
 
 from tqdm import tqdm
 import logging
+
+from pythonmodules.namenlijst import Namenlijst
+import pandas as pd
+from .helpers import AttributeMapper, RowWrapper
+
+
+def namenlijst(**kwargs):
+    #def wrap(n):
+    #    return AttributeMapper(n, dict(firstname='surname', lastname='familyname'))
+    wrap = lambda k: AttributeMapper(k, dict(firstname='surname', lastname='familyname'))
+    return RowWrapper(Namenlijst().findPerson(**kwargs), wrap)
+
+
+def kunstenaars(**kwargs):
+    people = pd.read_excel('datasources/20180605_kunstenaars_IFFM.xlsx')
+    people = [{
+                "firstname": r[0].split()[0],
+                "lastname": ' '.join(r[0].split()[1:]), "_id": n,
+                "victim_type": "kunstenaar"
+              } for n, r in enumerate(people.iterrows())]
+    return people
+
+
+Datasources = {
+    "kunstenaars": {
+        "func": kunstenaars,
+        'table': 'LinkKunstenaars'
+    },
+    "namenlijst": {
+        "func": namenlijst,
+    }
+}
 
 
 class Linker:
@@ -25,11 +57,18 @@ class Linker:
     skip_if_higher_than_count = 200
     to_skip = []
 
-    def __init__(self, num_worker_threads=10, counts_only=False, no_skips=False, no_write=False):
+    def __init__(self, num_worker_threads=10, counts_only=False, no_skips=False, no_write=False, categorizer=None,
+                 table=None):
         self.bar = None
+        self.categorizer = categorizer if categorizer is not None else 'victim_type'
         self.__cacher = LocalCacher(200)
         self.log = logging.getLogger('link_names')
         config = configparser.ConfigParser()
+        if table is None:
+            table = 'Link'
+        self.link = models.__dict__[table]
+
+        self.log.debug("Will write to %s '%s'" % (table, str(self.link)))
         config.read('config.ini')
 
         self.db = create_engine(config['db']['connection_url'])
@@ -39,7 +78,7 @@ class Linker:
         self.table = meta.tables[config['db']['table_name']]
 
         if not no_skips:
-            self.to_skip = set(LinkForSkips.objects.filter(status=LinkForSkips.SKIP)
+            self.to_skip = set(models.Link.objects.filter(status=models.Link.SKIP)
                                            .order_by('nmlid').values_list('nmlid', flat=True)
                                            .distinct())
 
@@ -72,7 +111,7 @@ class Linker:
                 # if not Link.objects.filter(**uq).exists():
                 if not self.no_write:
                     with timeit('slow create %s' % str(uq), 200):
-                        Link.objects.create(**uq)
+                        self.link.objects.create(**uq)
             except IntegrityError:
                 pass
             except Exception as e:
@@ -147,21 +186,21 @@ class Linker:
             return set()
 
     def work(self, idx, row):
-        if row['victim_type'] not in self.counts:
-            self.counts[row['victim_type']] = dict(skipped=0, ok=0, alternatives=0, found=0, skipped_too_freq=0)
+        if row[self.categorizer] not in self.counts:
+            self.counts[row[self.categorizer]] = dict(skipped=0, ok=0, alternatives=0, found=0, skipped_too_freq=0)
 
-        if len(row['familyname']) <= 2 or len(row['surname']) <= 2:
-            self.counts[row['victim_type']]['skipped'] += 1
+        if len(row['firstname']) <= 2 or len(row['lastname']) <= 2:
+            self.counts[row[self.categorizer]]['skipped'] += 1
             return
 
         if row['_id'] in self.to_skip:
-            self.counts[row['victim_type']]['skipped_too_freq'] += 1
+            self.counts[row[self.categorizer]]['skipped_too_freq'] += 1
             return
 
-        lastnames = row['alternative_familynames']
-        firstnames = row['alternative_surnames']
-        firstnames.append(row['surname'])
-        lastnames.append(row['familyname'])
+        lastnames = row['alternative_familynames'] if 'alternative_familynames' in row else []
+        firstnames = row['alternative_surnames'] if 'alternative_surnames' in row else []
+        firstnames.append(row['firstname'])
+        lastnames.append(row['lastname'])
 
         firstnames = filter(Linker.namesfilter, firstnames)
         lastnames = filter(Linker.namesfilter, lastnames)
@@ -184,21 +223,24 @@ class Linker:
         # lastnames = set(' '.join((l for l in lastname.split(' ') if len(l) > 1)) for lastname in lastnames)
 
         if len(firstnames) == 0 or len(lastnames) == 0:
-            self.counts[row['victim_type']]['skipped'] += 1
+            self.counts[row[self.categorizer]]['skipped'] += 1
         else:
-            self.counts[row['victim_type']]['ok'] += 1
-            self.counts[row['victim_type']]['alternatives'] += len(firstnames) * len(lastnames) - 1
+            self.counts[row[self.categorizer]]['ok'] += 1
+            self.counts[row[self.categorizer]]['alternatives'] += len(firstnames) * len(lastnames) - 1
 
         if not self.counts_only:
             res = self.get_results(row['_id'], firstnames, lastnames)
             if len(res):
-                self.counts[row['victim_type']]['found'] += len(res)
+                self.counts[row[self.categorizer]]['found'] += len(res)
             self.process(res, row, idx)
 
     def worker(self):
         while True:
             (idx, row) = self.q.get()
-            self.work(idx, row)
+            try:
+                self.work(idx, row)
+            except Exception as e:
+                self.log.exception(e)
             self.q.task_done()
             self.bar.update(1)
 

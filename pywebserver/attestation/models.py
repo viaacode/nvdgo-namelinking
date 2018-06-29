@@ -23,6 +23,9 @@ class LinkBase(models.Model):
     kind = models.CharField(max_length=300, default='')
     extras = models.CharField(max_length=300, default='')
 
+    def url(self):
+        return 'https://database.namenlijst.be/#/person/_id=%s' % self.nmlid
+
     class Meta:
         unique_together = (("pid", "nmlid"),)
         abstract = True
@@ -34,3 +37,13 @@ class Link(LinkBase):
 
 class LinkNew(LinkBase):
     pass
+
+
+class LinkKunstenaars(LinkBase):
+    def url(self):
+        return None
+
+    pass
+
+
+LinkNamenlijst = Link

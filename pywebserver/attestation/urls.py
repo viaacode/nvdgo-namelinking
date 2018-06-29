@@ -7,11 +7,20 @@ from lib.previews import get_info
 from django.forms.models import model_to_dict
 
 urlpatterns = [
-   path('', views.index, name='index'),
+   url('^(?:model-(?P<model>[^/]+))?$', views.index, name='index'),
    path('loading', views.loading, name='loading'),
-   path('progress.png', views.progress, name='progress'),
-   url('^info/(?P<pid>[^/]+)/(?P<nmlid>[^/]+)/(?P<words>.+)$', views.info, name='info'),
+   url('progress(?:-(?P<model>[a-z]+))?.png', views.progress, name='progress'),
+   url('^info(?:/model-(?P<model>[^/]+))?/(?P<pid>[^/]+)/(?P<nmlid>[^/]+)/(?P<words>.+)$', views.info, name='info'),
 ]
+
+
+def linkmodels_to_dict(links):
+    r = []
+    for l in links:
+        row = model_to_dict(l)
+        row['url'] = l.url()
+        r.append(row)
+    return r
 
 
 @api.dispatcher.add_method
@@ -25,24 +34,21 @@ def ping(request=None):
 
 
 @api.dispatcher.add_method
-def update_item(pid, nmlid, status, kind, extras, request=None):
-    items = Link.objects.filter(pid=pid, nmlid=nmlid)
+def update_item(model, pid, nmlid, status, kind, extras, request=None):
+    model = views.get_model(model)
+    items = model.objects.filter(pid=pid, nmlid=nmlid)
     items.update(status=status, kind=kind, extras=extras)
     return len(items)
 
 
 @api.dispatcher.add_method
-def get_kinds(kind='', request=None):
-    return [d['kind'] for d in Link.objects.values('kind').distinct()]
+def get_kinds(kind='', model=None, request=None):
+    model = views.get_model(model)
+    return [d['kind'] for d in model.objects.values('kind').distinct()]
 
 
 @api.dispatcher.add_method
-def get_itemzzs2(amount=100, request=None):
-    links = Link.objects.filter(status=Link.UNDEFINED).order_by('?')[0:amount]
-    return [model_to_dict(d) for d in links]
-
-
-@api.dispatcher.add_method
-def get_items(amount=1, request=None):
-    links = Link.objects.filter(status=Link.UNDEFINED).order_by('?')[0:amount]
-    return [model_to_dict(d) for d in links]
+def get_items(amount=1, model=None, request=None):
+    model = views.get_model(model)
+    links = model.objects.filter(status=model.UNDEFINED).order_by('?')[0:amount]
+    return linkmodels_to_dict(links)

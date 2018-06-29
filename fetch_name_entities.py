@@ -32,11 +32,10 @@ if has_arg('--test-connection'):
     print(type(mh.one()) is dict)
     exit()
 
-if not debug:
-    db = create_engine(config['db']['connection_url'])
-    db.connect()
-    meta = MetaData(db, reflect=True)
-    table = meta.tables[config['db']['table_name']]
+db = create_engine(config['db']['connection_url'])
+db.connect()
+meta = MetaData(db, reflect=True)
+table = meta.tables[config['db']['table_name']]
 
 start = 0
 if len(sys.argv) > 1:
