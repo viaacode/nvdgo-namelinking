@@ -46,4 +46,17 @@ class LinkKunstenaars(LinkBase):
     pass
 
 
+class Entities(models.Model):
+    _id = models.PositiveSmallIntegerField(db_index=True)
+    entity = models.CharField(max_length=300, default='', db_index=True)
+    entity_type = models.CharField(max_length=1, default='')
+    pid = models.CharField(max_length=26, db_index=True)
+    entity_full = models.TextField()
+    index = models.PositiveSmallIntegerField()
+
+    class Meta:
+        unique_together = (("id", "index"),)
+        # abstract = True
+
+
 LinkNamenlijst = Link

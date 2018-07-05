@@ -52,3 +52,41 @@
 .entity {
     font-size: 16px;
 }
+
+#extra-info-table {
+    position: fixed;
+    top: 0;
+    left: auto;
+    width: 200px;
+    display: block;
+    z-index: 9;
+    height: 50px;
+    right: 0;
+    overflow: hidden;
+    transition: height 0.15s ease-out;
+}
+#extra-info-table .toggle-button {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+#extra-info-table table {
+    display: none;
+}
+
+#extra-info-table:hover table {
+    display: table;
+    background-color: white;
+}
+
+#extra-info-table:hover {
+    height: 100%;
+    width: 100%;
+    overflow: scroll;
+    left: 0;
+    transition: height 0.25s ease-in;
+}
+#extra-info-table:hover .toggle-button {
+    display: none;
+}

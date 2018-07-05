@@ -34,12 +34,14 @@ window.nextItem = function () {
       Array.prototype.push.apply(buffer, data);
 
       var curData = nextData ? nextData : buffer.shift();
-      nextData = buffer.shift();
-
       var notI = i == 0 ? 1 : 0;
 
       // preloads[notI].attr('src', emptySrc);
-      preloads[notI].attr('src', get_url_archief(curData));
+      if (nextData === null) {
+        preloads[notI].attr('src', get_url_archief(curData));
+      }
+
+      nextData = buffer.shift();
       preloads[i].attr('src', emptySrc);
       link.attr('src', curData['url']);
 

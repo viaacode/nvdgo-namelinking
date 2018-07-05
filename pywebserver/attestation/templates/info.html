@@ -19,22 +19,23 @@
  <body>
    <!-- h1><a href="https://hetarchief.be/en/pid/{{ pid|slice:"0:10" }}/{{ pid|slice:"-2:2" }}">{{ pid }}</a></h1>
    <h2>{{ meta.title }}</h2 -->
-   <table class="pure-table pure-table-striped" style="display:none">
-      <tbody>
-        <tr> <td>Publicatie datum</td> <td>{{ props.carrier_date }}</td> </tr>
-        <tr> <td>Titel</td> <td>{{ meta.title }}</td> </tr>
-        <tr> <td>mediaObjectId</td> <td>{{ meta.mediaObjectId }}</td> </tr>
-        <tr> <td>hetarchief</td> <td><a href="https://hetarchief.be/en/pid/{{ pid|slice:"0:10" }}/{{ pid|slice:"-2:2" }}" target="_blank">
-          https://hetarchief.be/en/pid/{{ pid|slice:"0:10" }}/{{ pid|slice:"-2:2" }}
-       </a></td> </tr>
-        <tr> <td> namenlijst</td> <td><a href="https://database.namenlijst.be/#/person/_id={{ nmlid }}" target="_blank">https://database.namenlijst.be/#/person/_id={{ nmlid }}</a></td></tr>
-        <!-- tr> <td> details</td> <td><a href="{% url 'info' model pid nmlid words %}" target="_blank">{% url 'info' model pid nmlid words %}</a></td></tr -->
+   <div id="extra-info-table">
+       <button class="pure-button yellow toggle-button">More info...</button>
+       <table class="pure-table pure-table-striped">
+          <tbody>
+            <tr> <td>Publicatie datum</td> <td>{{ props.carrier_date }}</td> </tr>
+            <tr> <td>Titel</td> <td>{{ meta.title }}</td> </tr>
+            <tr> <td>mediaObjectId</td> <td>{{ meta.mediaObjectId }}</td> </tr>
+            <tr> <td>hetarchief</td> <td><a href="https://hetarchief.be/en/pid/{{ pid|slice:"0:10" }}/{{ pid|slice:"-2:2" }}" target="_blank">
+              https://hetarchief.be/en/pid/{{ pid|slice:"0:10" }}/{{ pid|slice:"-2:2" }}
+           </a></td> </tr>
+            <tr> <td> namenlijst</td> <td><a href="https://database.namenlijst.be/#/person/_id={{ nmlid }}" target="_blank">https://database.namenlijst.be/#/person/_id={{ nmlid }}</a></td></tr>
+            <tr><td>OCR</td><td>{{ meta.description | linebreaks }}</td></tr>
 
-        <!--
-        <tr> <td></td> <td></td> </tr>
-        -->
-      </tbody>
-    </table>
+            <tr> <td></td> <td></td> </tr>
+          </tbody>
+        </table>
+    </div>
 
     <div id="previews">
       <div class="image-container"></div>
@@ -53,7 +54,7 @@
                           <img src="{% static logo %}" alt="" />
                       {% endwith %}
                       </a></li>
-                      <li class="pure-menu-item entity">{{ entity }} ({{pid|slice:"-13:-5"}})</li>
+                      <li class="pure-menu-item entity">{{ entity }} ({{ props.carrier_date }})</li>
                     </ul>
                   </div>
               </div>

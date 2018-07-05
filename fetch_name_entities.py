@@ -6,7 +6,9 @@ from pythonmodules.ner import NERFactory, normalize
 from sqlalchemy import MetaData, create_engine
 from sqlalchemy.sql.expression import func
 
-import configparser
+from pythonmodules.profiling import timeit
+
+from pythonmodules.config import Config
 from tqdm import tqdm
 
 import sys
@@ -19,8 +21,7 @@ def has_arg(*args):
     return exists
 
 
-config = configparser.ConfigParser()
-config.read('config.ini')
+config = Config()
 
 mh = MediaHaven(config)
 
