@@ -47,7 +47,7 @@ class LinkKunstenaars(LinkBase):
 
 
 class Entities(models.Model):
-    _id = models.PositiveSmallIntegerField(db_index=True)
+    doc_index = models.PositiveSmallIntegerField(db_index=True)
     entity = models.CharField(max_length=300, default='', db_index=True)
     entity_type = models.CharField(max_length=1, default='')
     pid = models.CharField(max_length=26, db_index=True)
@@ -55,7 +55,7 @@ class Entities(models.Model):
     index = models.PositiveSmallIntegerField()
 
     class Meta:
-        unique_together = (("id", "index"),)
+        unique_together = (("doc_index", "index"),)
         # abstract = True
 
 
