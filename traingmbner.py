@@ -1,5 +1,6 @@
 from argparse import ArgumentParser
 from pythonmodules.ner.gmbner import *
+from pythonmodules.ner.test.tester import *
 import logging
 from pythonmodules.profiling import timeit
 import pickle
@@ -16,27 +17,6 @@ if __name__ == '__main__':
     args = parser.parse_args()
     if not args.profile:
         logging.getLogger('pythonmodules.profiling').setLevel(logging.ERROR)
-
-    class Samples:
-        def __init__(self):
-            self.data = None
-
-        def init(self):
-            reader = read_gmb()
-            data = list(reader)
-            self.data = (data[:int(len(data) * 0.1)], data[int(len(data) * 0.1):])
-
-        def training(self):
-            if self.data is None:
-                self.init()
-            return self.data[1]
-
-        def test(self, amount=500):
-            if self.data is None:
-                # optim: no need to read all the data if we only using test
-                reader = read_gmb()
-                return [next(reader) for i in range(amount)]
-            return self.data[0][:amount]
 
     samples = Samples()
     if args.train:
