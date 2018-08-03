@@ -33,7 +33,8 @@ ALLOWED_HOSTS = [
     '::1',
     'localhost',
     '127.0.0.1',
-    'nvdgo-linking.py'
+    'nvdgo-linking.py',
+    'web'
 ]
 
 

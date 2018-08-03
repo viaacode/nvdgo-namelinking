@@ -1,0 +1,26 @@
+version: '3'
+services:
+  db:
+    image: postgres
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx1
+    ports:
+      - "80:8000"
+    volumes:
+      - .:/src
+      - ./docker/nginx:/etc/nginx/conf.d
+    depends_on:
+      - web
+  
+  web:
+    build: docker
+    container_name: django1
+    command: /src/scripts/start-webserver.sh  # bash -c "python manage.py makemigrations && python manage.py migrate && gunicorn mydjango.wsgi -b 0.0.0.0:8000 --workers 3"
+    volumes:
+      - .:/src
+    expose:
+      - "8000"
+    depends_on:
+      - db
