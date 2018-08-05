@@ -1,6 +1,7 @@
 from argparse import ArgumentParser
 from pythonmodules.ner.chunker import NamedEntityChunker
 from pythonmodules.ner.tester import *
+from pythonmodules.ner.corpora import GMB
 import logging
 from pythonmodules.profiling import timeit
 import pickle
@@ -19,7 +20,7 @@ if __name__ == '__main__':
     if not args.profile:
         logging.getLogger('pythonmodules.profiling').setLevel(logging.ERROR)
 
-    samples = Samples()
+    samples = Samples(GMB())
     if args.train:
         with timeit('Creating NamedEntityChunker'):
             chunker = NamedEntityChunker(samples.training())

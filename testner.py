@@ -6,7 +6,6 @@ from tabulate import tabulate as tabber
 from argparse import ArgumentParser
 import logging
 
-logging.basicConfig()
 logger = logging.getLogger(__name__)
 
 if __name__ != '__main__':
@@ -33,7 +32,9 @@ parser.add_argument('--precision', type=int, default=5,
                     help='The precision used for output of floating point numbers')
 args = parser.parse_args()
 
-logger.setLevel(getattr(logging, args.log_level))
+loglevel = getattr(logging, args.log_level)
+logger.setLevel(loglevel)
+logging.basicConfig(level=loglevel)
 
 precision = args.precision
 tabulate = partial(tabber, tablefmt='pipe', floatfmt='.%df' % precision, numalign="right")
