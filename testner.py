@@ -1,4 +1,4 @@
-from pythonmodules.ner import tester, NERFactory
+from pythonmodules.ner import tester, NERFactory, corpora
 from pycm.pycm_param import PARAMS_DESCRIPTION, PARAMS_LINK
 from pycm.pycm_output import rounder as round_func
 from functools import partial
@@ -27,7 +27,7 @@ parser.add_argument('--log-level', type=str.upper, default='INFO', dest='log_lev
                     choices=logging._levelToName.values(),
                     help='Set the logging output level.')
 parser.add_argument('--corpus', type=str, default='GMB',
-                    help='The corpus to test against (TODO)')
+                    help='The corpus to test against')
 parser.add_argument('--precision', type=int, default=5,
                     help='The precision used for output of floating point numbers')
 args = parser.parse_args()
@@ -105,7 +105,12 @@ def confusion_matrix_to_text(cm, links=None, tablefmt='simple'):
 fmt = 'pipe'
 taggers = [tagger for tagger in NERFactory.KNOWN_TAGGERS if tagger not in args.skip]
 
-results = tester.Tester(taggers).test(args.amount)
+corpus = args.corpus
+corpus = getattr(corpora, corpus)
+
+# print([a for a in corpus().read_entities()])
+# exit()
+results = tester.Tester(taggers, corpus=corpus()).test(args.amount)
 
 if not args.no_output:
     print(h("Results", tablefmt='fancy_grid'))
