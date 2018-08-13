@@ -11,12 +11,15 @@ logger = logging.getLogger(__name__)
 if __name__ != '__main__':
     raise ImportError("this module cannot be imported")
 
+txt_known_taggers = 'Currently available taggers: %s' % ', '.join(NERFactory.KNOWN_TAGGERS)
 
 parser = ArgumentParser(description='Test NER taggers against GMB data')
-parser.add_argument('--skip', action='append',
-                    help='Skip certain taggers, currently available taggers: %s' % ', '.join(NERFactory.KNOWN_TAGGERS))
 parser.add_argument('amount', type=int, default=10, nargs='?',
                     help='Test the taggers with AMOUNT phrases, 0 for all (default 10)')
+parser.add_argument('--tagger', action='append', default=[],
+                    help='Include taggers to test, (if not set, includes all by default). %s' % txt_known_taggers)
+parser.add_argument('--skip', action='append',
+                    help='Skip certain taggers. %s' % txt_known_taggers)
 parser.add_argument('--no-output', dest='no_output', default=False, action='store_true',
                     help='Don\'t output results')
 parser.add_argument('--save-html', dest='save_html', action='store_true',
@@ -103,7 +106,13 @@ def confusion_matrix_to_text(cm, links=None, tablefmt='simple'):
 
 
 fmt = 'pipe'
-taggers = [tagger for tagger in NERFactory.KNOWN_TAGGERS if tagger not in args.skip]
+if args.tagger:
+    taggers = args.tagger
+else:
+    taggers = [tagger for tagger in NERFactory.KNOWN_TAGGERS]
+
+if args.skip:
+    taggers = [tagger for tagger in taggers if tagger not in args.skip]
 
 corpus = args.corpus
 corpus = getattr(corpora, corpus)
@@ -116,11 +125,12 @@ if not args.no_output:
     print(h("Results", tablefmt='fancy_grid'))
 
 for i, result in enumerate(results):
+    tagger_name = taggers[i].replace(':', ' ')
     if not args.no_output:
-        print(stringify_result(taggers[i], result, tablefmt='fancy_grid'))
+        print(stringify_result(tagger_name, result, tablefmt='fancy_grid'))
     if args.save_md:
-        with open('%s.md' % taggers[i], 'w') as f:
-            f.write(stringify_result(taggers[i], result, links=True, tablefmt='pipe'))
+        with open('%s.md' % tagger_name, 'w') as f:
+            f.write(stringify_result(tagger_name, result, links=True, tablefmt='pipe'))
     if args.save_html:
-        result.confusion_matrix.save_html(taggers[i])
+        result.confusion_matrix.save_html(tagger_name)
 
