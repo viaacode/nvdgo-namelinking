@@ -108,6 +108,33 @@ CACHES = {
     }
 }
 
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': '/tmp/django-debug.log',
+        },
+
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+
+    'loggers': {
+        'pythonmodules.mediahaven': {
+            'handlers': ['console', 'file'],
+            'propagate': True,
+        },
+        'requests.packages.urllib3': {
+            'handlers': ['console', 'file'],
+            'propagate': True,
+        },
+    }
+}
+
 # Password validation
 # https://docs.djangoproject.com/en/2.0/ref/settings/#auth-password-validators
 

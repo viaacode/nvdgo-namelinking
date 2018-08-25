@@ -24,7 +24,7 @@ from .helpers import AttributeMapper, RowWrapper
 
 
 def namenlijst(**kwargs):
-    #def wrap(n):
+    # def wrap(n):
     #    return AttributeMapper(n, dict(firstname='surname', lastname='familyname'))
     wrap = lambda k: AttributeMapper(k, dict(firstname='surname', lastname='familyname'))
     return RowWrapper(Namenlijst().findPerson(**kwargs), wrap)

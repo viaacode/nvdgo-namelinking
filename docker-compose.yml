@@ -12,7 +12,7 @@ services:
       - .:/src
       - ./docker/nginx:/etc/nginx/conf.d
     depends_on:
-      - web
+      - nvdgo-web
   
   nvdgo-web:
     build: docker
@@ -23,4 +23,4 @@ services:
     expose:
       - "8000"
     depends_on:
-      - db
+      - nvdgo-db

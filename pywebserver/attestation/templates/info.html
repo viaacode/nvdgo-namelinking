@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 {% load static %}
+{% load app_filters %}
 <html lang="en">
  <head>
    <meta charset="utf-8">
@@ -28,9 +29,9 @@
             <tr> <td>mediaObjectId</td> <td>{{ meta.mediaObjectId }}</td> </tr>
             <tr> <td>hetarchief</td> <td><a href="https://hetarchief.be/en/pid/{{ pid|slice:"0:10" }}/{{ pid|slice:"-2:2" }}" target="_blank">
               https://hetarchief.be/en/pid/{{ pid|slice:"0:10" }}/{{ pid|slice:"-2:2" }}
-           </a></td> </tr>
-            <tr> <td> namenlijst</td> <td><a href="https://database.namenlijst.be/#/person/_id={{ nmlid }}" target="_blank">https://database.namenlijst.be/#/person/_id={{ nmlid }}</a></td></tr>
-            <tr><td>OCR</td><td>{{ meta.description | linebreaks }}</td></tr>
+            </a></td> </tr>
+            <tr> <td> namenlijst</td> <td><a href="https://database.namenlijst.be/publicsearch/#/person/_id={{ nmlid }}" target="_blank">https://database.namenlijst.be/publicsearch/#/person/_id={{ nmlid }}</a></td></tr>
+            <tr> <td>OCR</td><td>{{ meta.description | highlight_words:entity | linebreaks }}</td> </tr>
 
             <tr> <td></td> <td></td> </tr>
           </tbody>

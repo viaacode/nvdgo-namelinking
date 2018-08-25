@@ -24,7 +24,8 @@ class LinkBase(models.Model):
     extras = models.CharField(max_length=300, default='')
 
     def url(self):
-        return 'https://database.namenlijst.be/#/person/_id=%s' % self.nmlid
+        return 'https://database.namenlijst.be/publicsearch/#/person/_id=%s' % self.nmlid
+        # return 'https://database.namenlijst.be/#/person/_id=%s' % self.nmlid
 
     class Meta:
         unique_together = (("pid", "nmlid"),)
