@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/2.0/ref/settings/
 import os
 import dj_database_url
 from pythonmodules.config import Config
+import colorlog
 
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -111,26 +112,45 @@ CACHES = {
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
+
+    'formatters': {
+        'file': {
+            'format': '%(asctime)s %(name)-12s %(levelname)-8s %(message)s @ %(filename)s(%(funcName)s):%(lineno)d',
+        },
+        'console': {
+            '()': 'colorlog.ColoredFormatter',
+            'format': '%(asctime)s %(name)-12s %(log_color)s%(levelname)-8s %(message)s @ %(filename)s(%(funcName)s):%(lineno)d',
+            'log_colors': {
+                'DEBUG': 'bold_black',
+                'INFO': 'white',
+                'WARNING': 'yellow',
+                'ERROR': 'red',
+                'CRITICAL': 'bold_red',
+            },
+        },
+    },
     'handlers': {
         'file': {
             'level': 'DEBUG',
             'class': 'logging.FileHandler',
             'filename': os.path.join(BASE_DIR, 'django-debug.log'),
+            'formatter': 'file',
         },
 
         'console': {
             'class': 'logging.StreamHandler',
+            'formatter': 'console',
         },
     },
 
     'loggers': {
         'pythonmodules.mediahaven': {
             'handlers': ['console', 'file'],
-            'propagate': True,
+            'propagate': False,
         },
         'requests.packages.urllib3': {
             'handlers': ['console', 'file'],
-            'propagate': True,
+            'propagate': False,
         },
     }
 }
