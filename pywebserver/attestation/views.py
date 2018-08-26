@@ -65,7 +65,7 @@ def info(request, pid, nmlid, words='', model=None):
         context['extras'] = obj.extras
         context['url'] = obj.url()
     else:
-        context['status'] = model.UNDEFINED
+        context['status'] = context['Link'].UNDEFINED
         context['url'] = ''
 
     return __render(request, 'info.html', context=context)
