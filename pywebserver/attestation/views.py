@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 DEFAULT_MODEL = 'namenlijst'
 
 
-def get_model(model=None):
+def get_model(model=None) -> models.LinkBase:
     if model is None:
         model = DEFAULT_MODEL
     model = 'Link%s' % model.title()
@@ -32,12 +32,30 @@ def loading(request):
     return __render(request, 'loading.html')
 
 
+def pid(request, pid, model=None):
+    if model is None:
+        model = DEFAULT_MODEL
+
+    link = get_model(model)
+
+    context = get_info(pid)
+    context['alto'] = context['alto'].jsonserialize()
+    context['model'] = model
+    context['Link'] = link
+
+    context['links'] = link.objects.filter(pid=pid)
+
+    return __render(request, 'pid.html', context=context)
+
+
 def info(request, pid, nmlid, words='', model=None):
+    if model is None:
+        model = DEFAULT_MODEL
     words = words.split('/')
     context = get_info(pid, words)
     context['nmlid'] = nmlid
     context['alto'] = context['alto'].jsonserialize()
-    context['model'] = model if model is not None else DEFAULT_MODEL
+    context['model'] = model
     context['Link'] = get_model(model)
     context['entity'] = ' '.join(words)
     obj = context['Link'].objects.filter(nmlid=nmlid, pid=pid).first()

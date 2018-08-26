@@ -15,9 +15,9 @@ def get_cacher(name):
 
 
 def get_info(pid, words=None):
-    def b64img(im):
+    def b64img(img):
         data = io.BytesIO()
-        im.save(data, format='JPEG', quality=85)
+        img.save(data, format='JPEG', quality=85)
         return base64.b64encode(data.getvalue()).decode()
 
     cache = get_cacher('MediaHaven')

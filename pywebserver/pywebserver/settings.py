@@ -119,7 +119,7 @@ LOGGING = {
         },
         'console': {
             '()': 'colorlog.ColoredFormatter',
-            'format': '%(asctime)s %(name)-12s %(log_color)s%(levelname)-8s %(message)s @ %(filename)s(%(funcName)s):%(lineno)d',
+            'format': '%(asctime)s %(name)-12s %(log_color)s%(levelname)-8s %(message)s @ %(filename)s:%(lineno)d (%(funcName)s)',
             'log_colors': {
                 'DEBUG': 'bold_black',
                 'INFO': 'white',
@@ -129,9 +129,9 @@ LOGGING = {
             },
         },
     },
+
     'handlers': {
         'file': {
-            'level': 'DEBUG',
             'class': 'logging.FileHandler',
             'filename': os.path.join(BASE_DIR, 'django-debug.log'),
             'formatter': 'file',
@@ -145,13 +145,20 @@ LOGGING = {
 
     'loggers': {
         'pythonmodules.mediahaven': {
+            'level': 'DEBUG',
             'handlers': ['console', 'file'],
             'propagate': False,
         },
         'requests.packages.urllib3': {
+            'level': 'DEBUG',
             'handlers': ['console', 'file'],
             'propagate': False,
         },
+        'pythonmodules': {
+            'level': 'DEBUG',
+            'handlers': ['console'],
+            'propagate': False,
+        }
     }
 }
 

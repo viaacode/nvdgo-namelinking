@@ -1,9 +1,13 @@
-#previews {
+#previews:not(.pure-u-1-2) {
   width: 100%;
+}
+
+#previews {
   position: relative;
   height: 800px;
   background: #000;
 }
+
 #previews .image-container {
   position: absolute;
   top: 0;
@@ -39,45 +43,80 @@
 }
 
 #previews .footer-info .pages {
-    text-align: center;
+  text-align: center;
 }
 
 #previews .footer-info .buttons {
-    text-align: right;
+  text-align: right;
 }
+
 .footer-info img {
-    height: 28px;
+  height: 28px;
 }
 
 .entity {
-    font-size: 16px;
+  font-size: 16px;
+}
+
+#pids {
+  height: 100vh;
+  max-height: 100%;
+  overflow-y: scroll;
 }
 
 #extra-info-table {
-    position: fixed;
-    top: 0;
-    left: auto;
-    width: 200px;
-    display: block;
-    z-index: 9;
-    height: 50px;
-    right: 0;
-    overflow: hidden;
-    transition: height 0.15s ease-out;
+  position: fixed;
+  top: 0;
+  left: auto;
+  width: 200px;
+  display: block;
+  z-index: 9;
+  height: 50px;
+  right: 0;
+  overflow: hidden;
+  transition: height 0.15s ease-out;
 }
 
 #extra-info-table .toggle-button {
-    display: block;
-    width: 200px;
-    height: 50px;
+  display: block;
+  width: 200px;
+  height: 50px;
 }
 
-#extra-info-table table.pure-table tbody tr td p {
-    max-height: 200px;
-    overflow-y: scroll;
+table.pure-table tbody tr td p {
+  margin-top: 0;
+  margin-bottom: 0;
+  max-height: 200px;
+  overflow-y: scroll;
 }
 
-#extra-info-table table.pure-table tbody tr td:not(:first-child) {
+#extra-info-table table {
+  display: none;
+}
+
+#extra-info-table:hover table {
+  display: table;
+  background-color: white;
+}
+
+#extra-info-table:hover {
+  height: 90%;
+  width: 100%;
+  overflow: scroll;
+  left: 0;
+  transition: height 0.25s ease-in;
+  background-color: #cbcbcb;
+}
+#extra-info-table:hover .toggle-button {
+  display: none;
+}
+
+
+table.pure-table tbody tr td:first-child {
+  vertical-align: top;
+}
+
+table.pure-table tbody tr td:not(:first-child) {
   overflow-wrap: break-word;
   word-wrap: break-word;
 
@@ -89,25 +128,4 @@
   -moz-hyphens: auto;
   -webkit-hyphens: auto;
   hyphens: auto;
-}
-
-#extra-info-table table {
-    display: none;
-}
-
-#extra-info-table:hover table {
-    display: table;
-    background-color: white;
-}
-
-#extra-info-table:hover {
-    height: 90%;
-    width: 100%;
-    overflow: scroll;
-    left: 0;
-    transition: height 0.25s ease-in;
-    background-color: #cbcbcb;
-}
-#extra-info-table:hover .toggle-button {
-    display: none;
 }

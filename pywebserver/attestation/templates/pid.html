@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+{% load static %}
+{% load app_filters %}
+<html lang="en">
+ <head>
+   <meta charset="utf-8">
+   <title>{{ title }}</title>
+   <link rel="stylesheet" href="https://unpkg.com/purecss@1.0.0/build/pure-min.css" integrity="sha384-nn4HPE8lTHyVtfCBi5yW9d20FjT8BJwUXyWZT9InLYax14RDjBj46LmSztkmNP9w" crossorigin="anonymous">
+   <link rel="stylesheet" href="{% static "css/alto.css" %}">
+   <link rel="stylesheet" href="{% static "css/style.css" %}">
+   <link href="{% static "css/imageviewer.css" %}"  rel="stylesheet" type="text/css" />
+   <link href="{% static "css/info.css" %}"  rel="stylesheet" type="text/css" />
+   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+   <script src="https://d3js.org/d3.v5.min.js"></script>
+   <script src="{% static "js/imageviewer.js" %}"></script>
+   <link rel="stylesheet" href="{% static "css/awesomplete.css" %}">
+   <script src="{% static "js/awesomplete.js" %}"></script>
+   <script src="{% static "js/escaper.js" %}"></script>
+ </head>
+ <body>
+
+    <div class="pure-g">
+        <div id="previews" class="pure-u-1-2">
+          <div class="image-container"></div>
+           <img src="{% static "img/left.svg" %}" class="prev" />
+           <img src="{% static "img/right.svg" %}" class="next" />
+           <div class="footer-info">
+              <div class="pure-g">
+                  <div class="pure-u-1-3 links">
+                      <div class="pure-menu pure-menu-horizontal">
+                        <ul class="pure-menu-list">
+                          <li class="pure-menu-item">&nbsp;</li>
+                          <li class="pure-menu-item"><a href="https://hetarchief.be/en/pid/{{ pid|slice:"0:10" }}/{{ pid|slice:"-4:"|add:"0" }}" target="_blank" title="Open artikel op hetarchief.be" ><img src="{% static "img/archief-logo.png" %}" alt="" /></a></li>
+
+                          <li class="pure-menu-item entity">{{ meta.title }} ({{ props.carrier_date }})</li>
+                        </ul>
+                      </div>
+                  </div>
+                  <div class="pure-u-1-3 pages">
+                       <span class="current"></span>/<span class="total"></span>
+                  </div>
+              </div>
+           </div>
+        </div>
+
+       <div class="pure-u-1-2" id="pids">
+           <table class="pure-table pure-table-striped">
+              <tbody>
+                <tr> <td>Publicatie datum</td> <td>{{ props.carrier_date }}</td> </tr>
+                <tr> <td>Titel</td> <td>{{ meta.title }}</td> </tr>
+                <tr> <td>mediaObjectId</td> <td>{{ meta.mediaObjectId }}</td> </tr>
+                <tr> <td>hetarchief</td> <td><a href="https://hetarchief.be/en/pid/{{ pid|slice:"0:10" }}/{{ pid|slice:"-2:2" }}" target="_blank">
+                  https://hetarchief.be/en/pid/{{ pid|slice:"0:10" }}/{{ pid|slice:"-2:2" }}
+                </a></td> </tr>
+                <tr> <td>OCR</td><td>{{ meta.description | linebreaks }}</td> </tr>
+
+                <tr> <td></td> <td></td> </tr>
+              </tbody>
+            </table>
+        </div>
+    </div>
+
+
+   {% if preview %}<img class="pure-img preview alto-image" src="data:image/jpg;base64,{{ preview }}" alt="{{ pid }}" title="{{ meta.title }}" data-alto="{{ alto }}">{% endif %}
+   {% if preview_full %}
+    <img class="pure-img preview alto-image" src="data:image/jpg;base64,{{ preview_full }}" alt="{{ pid }}" title="{{ meta.title }}" data-alto="{{ alto }}">
+   {% elif previewImageUrl %}
+   <img class="pure-img preview alto-image" src="{{ previewImageUrl }}" alt="{{ pid }}" title="{{ meta.title }}" data-alto="{{ alto }}">
+   {% endif %}
+   {% if preview_confidence %}<img class="pure-img preview" src="data:image/jpg;base64,{{ preview_confidence }}" alt="{{ pid }}" title="{{ meta.title }}">{% endif %}
+
+
+   <!-- hr />
+   <pre>
+     {{meta}}
+   </pre -->
+   <script src="{% static "js/alto.js" %}"></script>
+   <script src="{% static "js/jsonrpc.js" %}"></script>
+   <script>
+    // d3.selectAll('img.alto-image').call(alto);
+     $(function () {
+         var ih = 0,
+             $previews = $('#previews');
+
+	     setInterval(function() {
+	        if (ih != window.innerHeight) {
+	          ih = window.innerHeight;
+              $previews.css('height', ih + 'px');
+            }
+         }, 1000);
+         var images = [];
+         $('img.preview').each(function () {
+            images.push({
+               small: this.src,
+               big: this.src
+            });
+            $(this).remove();
+         });
+
+         var curImageIdx = 1,
+             total = images.length,
+             wrapper = $('#previews'),
+             curSpan = wrapper.find('.current');
+             viewer = ImageViewer(wrapper.find('.image-container'));
+
+         //display total count
+         wrapper.find('.total').html(total);
+
+         function showImage(){
+             var imgObj = images[curImageIdx - 1];
+             viewer.load(imgObj.small, imgObj.big);
+             curSpan.html(curImageIdx);
+         }
+
+         wrapper.find('.next').click(function(){
+              curImageIdx++;
+             if(curImageIdx > total) curImageIdx = 1;
+             showImage();
+         });
+
+         wrapper.find('.prev').click(function(){
+              curImageIdx--;
+             if(curImageIdx < 0) curImageIdx = total;
+             showImage();
+         });
+
+         //initially show image
+         showImage();
+
+     });
+
+   </script>
+ </body>
+</html>
