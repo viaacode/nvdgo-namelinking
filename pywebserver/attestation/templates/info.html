@@ -162,14 +162,14 @@
          }
 
          wrapper.find('.next').click(function(){
-              curImageIdx++;
-             if(curImageIdx > total) curImageIdx = 1;
+             curImageIdx++;
+             if (curImageIdx > total) curImageIdx = 1;
              showImage();
          });
 
          wrapper.find('.prev').click(function(){
-              curImageIdx--;
-             if(curImageIdx < 0) curImageIdx = total;
+             curImageIdx--;
+             if (curImageIdx <= 0) curImageIdx = total;
              showImage();
          });
 
