@@ -5,6 +5,7 @@
    height: 100%;
    display: block;
    position: absolute;
+   pointer-events: none;
 }
 
 .alto-wrapper .alto-text:hover span,
@@ -17,6 +18,10 @@
    position: relative;
 }
 
+.alto-main {
+   overflow: hidden;
+}
+
 .alto-wrapper .alto-text span {
    display: block;
    overflow: hidden;
@@ -24,6 +29,7 @@
    font-size: 8px;
    border: 1px solid rgba(255, 255, 0, 0.5);
    text-indent: -99999px;
+   pointer-events: initial;
 }
 
 .alto-main .alto-links li {

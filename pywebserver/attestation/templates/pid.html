@@ -22,7 +22,7 @@
     <div class="pure-g">
         <div id="previews" class="pure-u-1-2">
           <div class="image-container">
-              <img class="pure-img preview alto-image" src="{{ previewImageUrl }}" alt="{{ pid }}" title="{{ meta.title }}" data-alto="{{ alto }}">
+              <img class="pure-img preview alto-image" src="{{ previewImageUrl }}" alt="{{ pid }}" title="{{ meta.title }}" data-alto="{{ alto | json:"auto_escape=True" }}">
           </div>
            <div class="footer-info">
               <div class="pure-g">
@@ -50,8 +50,11 @@
                   https://hetarchief.be/en/pid/{{ pid|slice:"0:10" }}/{{ pid|slice:"-2:2" }}
                 </a></td> </tr>
                 <tr> <td>OCR</td><td>{{ meta.description | linebreaks }}</td> </tr>
-
-                <tr> <td></td> <td></td> </tr>
+                <tr> <td>alto</td><td><pre>{{ alto | json | linebreaks }}</pre></td> </tr>
+                <tr> <th>Entities</th> <th>Corresponding id</th> </tr>
+                {% for link in links %}
+                <tr> <td>{{ link.entity }} </td> <td><a href="{{ link.url }}" target="_blank" title="Open in {{ model }}">{{ link.nmlid }}</a></td> </tr>
+                {% endfor %}
               </tbody>
             </table>
         </div>
@@ -65,19 +68,40 @@
    <script src="{% static "js/alto.js" %}"></script>
    <script src="{% static "js/jsonrpc.js" %}"></script>
    <script>
-    // d3.selectAll('img.alto-image').call(alto);
      $(function () {
          var ih = 0,
              $previews = $('#previews');
 
-	     setInterval(function() {
-	        if (ih != window.innerHeight) {
-	          ih = window.innerHeight;
-              $previews.css('height', ih + 'px');
-            }
-         }, 1000);
+         var links = [
+             {% for link in links %}
+             {{ link.entity | json }},
+             {% endfor %}
+         ];
+         window.links = links;
 
-         ImageViewer($previews.find('.image-container img'))
+         d3.selectAll('img.alto-image').call(alto, links);
+         var viewer = ImageViewer($previews.find('img.preview'));
+         var img = $previews.find('.iv-large-image'),
+             alto_overlay = $('.alto-text');
+
+         function update_alto_zoom() {
+             var styles = [ 'width', 'height', 'left', 'top', 'max-width', 'max-height' ],
+                 css = {};
+
+             for (var key of styles) {
+                 css[key] = img.css(key);
+             }
+
+             alto_overlay.css(css);
+         }
+
+	     setInterval(function() {
+	         if (ih != window.innerHeight) {
+	             ih = window.innerHeight;
+                 $previews.css('height', ih + 'px');
+             }
+             update_alto_zoom();
+         }, 1000);
      });
 
    </script>

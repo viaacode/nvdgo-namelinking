@@ -5,6 +5,8 @@ from django.core.cache import caches
 from django.core.cache.backends.base import InvalidCacheBackendError
 from pythonmodules.cache import WrapperCacher
 from pythonmodules.mediahaven import MediaHavenException
+from pythonmodules import decorators
+import logging
 
 
 def get_cacher(name):
@@ -14,7 +16,8 @@ def get_cacher(name):
         return caches['default']
 
 
-def get_info(pid, words=None):
+@decorators.log_call(logger=logging.getLogger('pythonmodules'))
+def get_info(pid, words=None, extra_previews=True):
     def b64img(img):
         data = io.BytesIO()
         img.save(data, format='JPEG', quality=85)
@@ -26,6 +29,7 @@ def get_info(pid, words=None):
     result = {
         "pid": pid,
         "words": len(words) if words is not None else 0,
+        "alto": None,
     }
 
     with mh.get_preview(pid) as im:
@@ -33,7 +37,7 @@ def get_info(pid, words=None):
         result['meta'] = im.meta
         result['alto'] = im.get_words(words)
 
-        if result['words'] > 0:
+        if result['words'] > 0 and extra_previews:
             result['preview_full'] = b64img(im.highlight_words(words, crop=False))
             result['preview'] = b64img(im.highlight_words(words))
 

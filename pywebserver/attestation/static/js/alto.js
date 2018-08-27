@@ -62,7 +62,7 @@ var wrap = function wrap(selection, elem, no_clone) {
       });
 }
 
-var alto = function alto(selection) {
+var alto = function alto(selection, words) {
   return selection.each(function(d, i) {
      if (this.__alto) {
         // already initialized
@@ -79,6 +79,9 @@ var alto = function alto(selection) {
      } catch (e) {
         warn(e, el);
         return el;
+     }
+     if (typeof words === 'undefined') {
+        data['words'] = words;
      }
 
      var $this = d3.select(this);
