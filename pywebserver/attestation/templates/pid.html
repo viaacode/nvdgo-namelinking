@@ -21,12 +21,12 @@
 
     <div class="pure-g">
         <div id="previews" class="pure-u-1-2">
-          <div class="image-container"></div>
-           <img src="{% static "img/left.svg" %}" class="prev" />
-           <img src="{% static "img/right.svg" %}" class="next" />
+          <div class="image-container">
+              <img class="pure-img preview alto-image" src="{{ previewImageUrl }}" alt="{{ pid }}" title="{{ meta.title }}" data-alto="{{ alto }}">
+          </div>
            <div class="footer-info">
               <div class="pure-g">
-                  <div class="pure-u-1-3 links">
+                  <div class="pure-u-1-1 links">
                       <div class="pure-menu pure-menu-horizontal">
                         <ul class="pure-menu-list">
                           <li class="pure-menu-item">&nbsp;</li>
@@ -35,9 +35,6 @@
                           <li class="pure-menu-item entity">{{ meta.title }} ({{ props.carrier_date }})</li>
                         </ul>
                       </div>
-                  </div>
-                  <div class="pure-u-1-3 pages">
-                       <span class="current"></span>/<span class="total"></span>
                   </div>
               </div>
            </div>
@@ -61,15 +58,6 @@
     </div>
 
 
-   {% if preview %}<img class="pure-img preview alto-image" src="data:image/jpg;base64,{{ preview }}" alt="{{ pid }}" title="{{ meta.title }}" data-alto="{{ alto }}">{% endif %}
-   {% if preview_full %}
-    <img class="pure-img preview alto-image" src="data:image/jpg;base64,{{ preview_full }}" alt="{{ pid }}" title="{{ meta.title }}" data-alto="{{ alto }}">
-   {% elif previewImageUrl %}
-   <img class="pure-img preview alto-image" src="{{ previewImageUrl }}" alt="{{ pid }}" title="{{ meta.title }}" data-alto="{{ alto }}">
-   {% endif %}
-   {% if preview_confidence %}<img class="pure-img preview" src="data:image/jpg;base64,{{ preview_confidence }}" alt="{{ pid }}" title="{{ meta.title }}">{% endif %}
-
-
    <!-- hr />
    <pre>
      {{meta}}
@@ -89,45 +77,7 @@
             }
          }, 1000);
 
-         var images = [];
-         $('img.preview').each(function () {
-            images.push({
-               small: this.src,
-               big: this.src
-            });
-            $(this).remove();
-         });
-
-         var curImageIdx = 1,
-             total = images.length,
-             wrapper = $('#previews'),
-             curSpan = wrapper.find('.current');
-             viewer = ImageViewer(wrapper.find('.image-container'));
-
-         //display total count
-         wrapper.find('.total').html(total);
-
-         function showImage(){
-             var imgObj = images[curImageIdx - 1];
-             viewer.load(imgObj.small, imgObj.big);
-             curSpan.html(curImageIdx);
-         }
-
-         wrapper.find('.next').click(function(){
-             curImageIdx++;
-             if (curImageIdx > total) curImageIdx = 1;
-             showImage();
-         });
-
-         wrapper.find('.prev').click(function(){
-             curImageIdx--;
-             if (curImageIdx <= 0) curImageIdx = total;
-             showImage();
-         });
-
-         //initially show image
-         showImage();
-
+         ImageViewer($previews.find('.image-container img'))
      });
 
    </script>
