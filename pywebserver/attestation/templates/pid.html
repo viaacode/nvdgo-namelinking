@@ -50,7 +50,9 @@
                   https://hetarchief.be/en/pid/{{ pid|slice:"0:10" }}/{{ pid|slice:"-2:2" }}
                 </a></td> </tr>
                 <tr> <td>OCR</td><td>{{ meta.description | linebreaks }}</td> </tr>
-                <tr> <td>alto</td><td><pre>{{ alto | json | linebreaks }}</pre></td> </tr>
+                {% comment %}
+                <tr> <td>alto</td><td>{{ alto | json | linebreaks }}</td> </tr>
+                {% endcomment %}
                 <tr> <th>Entities</th> <th>Corresponding id</th> </tr>
                 {% for link in links %}
                 <tr>
