@@ -10,6 +10,8 @@
    <link rel="stylesheet" href="{% static "css/style.css" %}">
    <link href="{% static "css/imageviewer.css" %}"  rel="stylesheet" type="text/css" />
    <link href="{% static "css/info.css" %}"  rel="stylesheet" type="text/css" />
+
+   <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.2.0/css/all.css" integrity="sha384-hWVjflwFxL6sNzntih27bfxkr27PmbbK/iSvJ+a4+0owXq79v+lsFkW54bOGbiDQ" crossorigin="anonymous">
    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
    <script src="https://d3js.org/d3.v5.min.js"></script>
    <script src="{% static "js/imageviewer.js" %}"></script>
@@ -48,9 +50,11 @@
                   <div class="pure-menu pure-menu-horizontal">
                     <ul class="pure-menu-list">
                       <li class="pure-menu-item">&nbsp;</li>
+                      <li class="pure-menu-item"><a href="{% url 'pid' pid=pid model=model %}" title="Meer entities op dit artikel" target="_blank"><i class="fas fa-angle-double-up"></i> </a></li>
                       <li class="pure-menu-item"><a href="https://hetarchief.be/en/pid/{{ pid|slice:"0:10" }}/{{ pid|slice:"-4:"|add:"0" }}" target="_blank" title="Open artikel op hetarchief.be" ><img src="{% static "img/archief-logo.png" %}" alt="" /></a></li>
 
                       <li class="pure-menu-item"><a href="{{ url }}" title="Open in bron" target="_blank">
+
                       {% with "img/"|add:model|add:"-logo.png" as logo %}
                           <img src="{% static logo %}" alt="" />
                       {% endwith %}
@@ -131,12 +135,15 @@
          var ih = 0,
              $previews = $('#previews');
 
-	     setInterval(function() {
-	        if (ih != window.innerHeight) {
-	          ih = window.innerHeight;
-              $previews.css('height', ih + 'px');
-            }
-         }, 1000);
+
+         function onResize() {
+	         if (ih != window.innerHeight) {
+	             ih = window.innerHeight;
+                 $previews.css('height', ih + 'px');
+             }
+         }
+         $(window).resize(onResize);
+
          var images = [];
          $('img.preview').each(function () {
             images.push({
@@ -150,7 +157,7 @@
              total = images.length,
              wrapper = $('#previews'),
              curSpan = wrapper.find('.current');
-             viewer = ImageViewer(wrapper.find('.image-container'));
+             viewer = ImageViewer(wrapper.find('.image-container'), { maxZoom: 1000 });
 
          //display total count
          wrapper.find('.total').html(total);
@@ -262,6 +269,8 @@
         d3.select('button[type="reset"]').on('click', function () {
           document.getElementById('modal-trigger').click();
         });
+
+        onResize();
      });
 
    </script>

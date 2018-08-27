@@ -53,7 +53,16 @@
                 <tr> <td>alto</td><td><pre>{{ alto | json | linebreaks }}</pre></td> </tr>
                 <tr> <th>Entities</th> <th>Corresponding id</th> </tr>
                 {% for link in links %}
-                <tr> <td>{{ link.entity }} </td> <td><a href="{{ link.url }}" target="_blank" title="Open in {{ model }}">{{ link.nmlid }}</a></td> </tr>
+                <tr>
+                  <td>{{ link.entity }} </td>
+                  <td>
+                      {% with "img/"|add:model|add:"-logo.png" as logo %}
+                          <a href="{{ link.url }}" target="_blank" title="Open in {{ model }}"><img src="{% static logo %}" alt="" style="height: 16px" /></a>
+                      {% endwith %}
+                      {% with link.entity|replace:" :/" as namepart %}
+                      <a href="{% url 'info' model=model pid=link.pid nmlid=link.nmlid words=namepart %}" title="Open in attestation">{{ link.nmlid }}</a>
+                      {% endwith %}
+                  </td> </tr>
                 {% endfor %}
               </tbody>
             </table>
@@ -80,11 +89,11 @@
          window.links = links;
 
          d3.selectAll('img.alto-image').call(alto, links);
-         var viewer = ImageViewer($previews.find('img.preview'));
+         var viewer = ImageViewer($previews.find('img.preview'), { maxZoom: 1000 });
          var img = $previews.find('.iv-large-image'),
              alto_overlay = $('.alto-text');
 
-         function update_alto_zoom() {
+         function onZoomChange() {
              var styles = [ 'width', 'height', 'left', 'top', 'max-width', 'max-height' ],
                  css = {};
 
@@ -95,13 +104,30 @@
              alto_overlay.css(css);
          }
 
-	     setInterval(function() {
+         function onResize() {
 	         if (ih != window.innerHeight) {
 	             ih = window.innerHeight;
                  $previews.css('height', ih + 'px');
              }
-             update_alto_zoom();
-         }, 1000);
+         }
+
+         // hack jQuery css to trigger a cssChange event
+         (function() {
+                var ev = new $.Event('cssChange'),
+                    origFnCss = $.fn.css;
+
+                $.fn.css = function() {
+                    res = origFnCss.apply(this, arguments);
+                    if (arguments.length > 1 || typeof(arguments[0]) !== 'string') {
+                      $(this).trigger(ev);
+                    }
+                    return res;
+                }
+         })();
+
+         img.on('cssChange', onZoomChange);
+         $(window).resize(onResize);
+         onResize();
      });
 
    </script>

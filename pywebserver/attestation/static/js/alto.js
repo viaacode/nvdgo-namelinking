@@ -112,6 +112,7 @@ var alto = function alto(selection, words) {
 
            });
 
+     /*
      els.extra.append('div').classed('alto-links', true)
      els.extra.select('div.alto-links').append('ul').selectAll('li').data(data['words']).enter()
           .append('li')
@@ -133,6 +134,7 @@ var alto = function alto(selection, words) {
           .on('mouseout', function (d, i) {
              d3.select('#' + id_prefix + '_' + i).classed('active', false);
           });
+       */
   });
 };
 

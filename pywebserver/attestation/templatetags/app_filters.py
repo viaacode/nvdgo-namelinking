@@ -51,3 +51,9 @@ def json_(obj, autoescape=False, serializer=_serialize):
     if autoescape:
         obj = conditional_escape(obj)
     return mark_safe(obj)
+
+
+@register.filter(name='replace')
+def replace_(txt: str, args: str):
+    search, replace = args.split(':', 1)
+    return txt.replace(search, replace)

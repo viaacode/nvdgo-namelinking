@@ -3,6 +3,9 @@ body {
   overscroll-behavior: contain;
 }
 
+.fas {
+  color:white;
+}
 
 #previews:not(.pure-u-1-2) {
   width: 100%;
@@ -134,4 +137,8 @@ table.pure-table tbody tr td:not(:first-child) {
   -moz-hyphens: auto;
   -webkit-hyphens: auto;
   hyphens: auto;
+}
+
+.iv-snap-view {
+    opacity: 1 !important;
 }
