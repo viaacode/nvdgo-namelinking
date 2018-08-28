@@ -15,15 +15,6 @@ urlpatterns = [
 ]
 
 
-def linkmodels_to_dict(links):
-    r = []
-    for l in links:
-        row = model_to_dict(l)
-        row['url'] = l.url()
-        r.append(row)
-    return r
-
-
 @api.dispatcher.add_method
 def get_info(pid, words=[], request=None):
     return get_info(pid, words)
@@ -48,8 +39,17 @@ def get_kinds(kind='', model=None, request=None):
     return [d['kind'] for d in model.objects.values('kind').distinct()]
 
 
+def linkmodel_to_dict(model):
+    result = model_to_dict(model)
+    properties = ('url', 'status_class', 'status_text')
+    for prop in properties:
+        result[prop] = getattr(model, prop)
+    return result
+
+
 @api.dispatcher.add_method
 def get_items(amount=1, model=None, request=None):
     model = views.get_model(model)
     links = model.objects.filter(status=model.UNDEFINED).order_by('?')[0:amount]
-    return linkmodels_to_dict(links)
+    return list(map(linkmodel_to_dict, links))
+

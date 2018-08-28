@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+{% load compile_static %}
 {% load static %}
 {% load app_filters %}
 <html lang="en">
@@ -9,7 +10,7 @@
    <link rel="stylesheet" href="{% static "css/alto.css" %}">
    <link rel="stylesheet" href="{% static "css/style.css" %}">
    <link href="{% static "css/imageviewer.css" %}"  rel="stylesheet" type="text/css" />
-   <link href="{% static "css/info.css" %}"  rel="stylesheet" type="text/css" />
+   <link href="{% static "css/info.less"|compile %}" rel="stylesheet" type="text/css" />
 
    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.2.0/css/all.css" integrity="sha384-hWVjflwFxL6sNzntih27bfxkr27PmbbK/iSvJ+a4+0owXq79v+lsFkW54bOGbiDQ" crossorigin="anonymous">
    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>

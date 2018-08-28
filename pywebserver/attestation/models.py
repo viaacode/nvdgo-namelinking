@@ -23,9 +23,21 @@ class LinkBase(models.Model):
     kind = models.CharField(max_length=300, default='')
     extras = models.CharField(max_length=300, default='')
 
+    @property
     def url(self):
         return 'https://database.namenlijst.be/publicsearch/#/person/_id=%s' % self.nmlid
         # return 'https://database.namenlijst.be/#/person/_id=%s' % self.nmlid
+
+    @property
+    def status_class(self):
+        return self.status_text.lower().replace(' ', '-')
+
+    @property
+    def status_text(self):
+        names = next(filter(lambda x: x[0] == self.status, self.STATUS_CHOICES))
+        if not len(names):
+            return None
+        return names[1]
 
     class Meta:
         unique_together = (("pid", "nmlid"),)
@@ -41,6 +53,7 @@ class LinkNew(LinkBase):
 
 
 class LinkKunstenaars(LinkBase):
+    @property
     def url(self):
         return None
 

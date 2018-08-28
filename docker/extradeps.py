@@ -2,3 +2,5 @@
 import gunicorn
 import django_extensions
 import psycopg2
+import static_precompiler
+import colorlog

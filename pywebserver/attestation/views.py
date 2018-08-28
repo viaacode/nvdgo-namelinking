@@ -7,7 +7,6 @@ from io import BytesIO
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-import logging
 
 DEFAULT_MODEL = 'namenlijst'
 
@@ -40,7 +39,6 @@ def pid(request, pid, model=None):
     link = get_model(model)
     links = list(link.objects.filter(pid=pid))
     words = [link.entity.split(' ') for link in links]
-    logging.getLogger('pythonmodules').debug('words: %s', str(words))
     context = get_info(pid, words, extra_previews=False)
     context['model'] = model
     context['Link'] = link
@@ -63,7 +61,7 @@ def info(request, pid, nmlid, words='', model=None):
         context['status'] = obj.status
         context['kind'] = obj.kind
         context['extras'] = obj.extras
-        context['url'] = obj.url()
+        context['url'] = obj.url
     else:
         context['status'] = context['Link'].UNDEFINED
         context['url'] = ''
