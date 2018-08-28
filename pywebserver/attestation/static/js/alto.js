@@ -10,7 +10,7 @@ var warn = function warn() {
    if (typeof console.warn === 'function') {
       return console.warn.apply(this, arguments);
    }
-   if (typeof console.lo  === 'function') {
+   if (typeof console.log === 'function') {
       return console.log.apply(this, arguments);
    }
 }
@@ -62,7 +62,36 @@ var wrap = function wrap(selection, elem, no_clone) {
       });
 }
 
-var alto = function alto(selection, words) {
+var altoFuncs = function(elements, mapping) {
+    this.els = elements;
+    this.mapping = mapping;
+    this.events = {'mouseover': [], 'mouseout': []}
+};
+
+altoFuncs.prototype.highlight = function(text) {
+    this.els.text.selectAll('span').classed('active', function (d, i, m) {
+        return typeof text !== 'undefined' && (d.word.meta == text);
+    });
+    return this;
+};
+
+altoFuncs.prototype.on = function (eventName, handler) {
+    this.events[eventName].push(handler);
+    return this;
+};
+
+altoFuncs.prototype.handleEvent = function (eventName) {
+    var me = this;
+    return function (d, i, m) {
+        if (typeof me.events[eventName] !== 'undefined') {
+            for (handler of me.events[eventName]) {
+                handler.call(this, d, i, m);
+            }
+        }
+    };
+}
+
+var alto = function alto(selection, links) {
   return selection.each(function(d, i) {
      if (this.__alto) {
         // already initialized
@@ -80,25 +109,21 @@ var alto = function alto(selection, words) {
         warn(e, el);
         return el;
      }
-     if (typeof words === 'undefined') {
-        data['words'] = words;
-     }
 
-     var $this = d3.select(this);
      var els = {};
 
      els.wrapper = wrap(this, 'alto-wrapper');
      els.main = wrap(els.wrapper, 'alto-main');
      els.text = els.wrapper.append('div').classed('alto-text', true);
      els.extra = els.main.append('div').classed('alto-extra', true);
-     console.log(els);
-     window.els = els;
-     window.wrapf = wrap;
+
+     this.__alto = new altoFuncs(els, data['words']);
 
      var id_prefix = 'alto_' + Date.now();
 
      var sc = scale.apply(null, data['page_dimensions']);
-     window.sc = sc;
+     var alto_links = {};
+
      els.text.selectAll('span').data(data['words']).enter()
        .append('span')
            .text(function(d) {return d.word.text;})
@@ -108,10 +133,12 @@ var alto = function alto(selection, words) {
            .style('width', function (d) { return sc.x(d.extent.w); })
            .style('height', function (d) { return sc.y(d.extent.h); })
            .attr('id', function(d, i) { return id_prefix + '_' + i; } )
-           .each(function () {
-
+           .on('mouseover', this.__alto.handleEvent('mouseover'))
+           .on('mouseout', this.__alto.handleEvent('mouseout'))
+           .each(function (d, i) {
            });
 
+//      $this.data('alto-links', alto_links);
      /*
      els.extra.append('div').classed('alto-links', true)
      els.extra.select('div.alto-links').append('ul').selectAll('li').data(data['words']).enter()

@@ -165,3 +165,6 @@ table.pure-table.pure-table-odd tbody tr td p {
 .link-status .undefined:after {
   content: '';
 }
+.active {
+  font-weight: bold;
+}
