@@ -15,26 +15,6 @@ var warn = function warn() {
    }
 }
 
-var scale = function scale(w, h, newW, newH, unit) {
-   if (typeof newW === 'undefined') {
-      newW = 100;
-   }
-   if (typeof newH === 'undefined') {
-      newH = 100;
-   }
-   if (typeof unit === 'undefined') {
-      unit = '%';
-   }
-   return {
-      x: function (coord) {
-         return (coord / w * newW) + unit;
-      },
-      y: function (coord) {
-         return (coord / h * newH) + unit;
-      }
-   };
-};
-
 var div_factory = function (cls) {
    var el = document.createElement('div');
    el.className = cls;
@@ -62,9 +42,40 @@ var wrap = function wrap(selection, elem, no_clone) {
       });
 }
 
-var altoFuncs = function(elements, mapping) {
+var Extent = function Extent(x, y, w, h) {
+    this.x = x;
+    this.y = y;
+    this.w = w;
+    this.h = h;
+}
+
+Extent.to_coords = function(x, y, w, h) {
+    return [x, y, x + w, y + h];
+};
+
+Extent.prototype.as_coords = function() {
+    return Extent.to_coords(this.x, this.y, this.w, this.h);
+};
+
+Extent.prototype.extend = function (x, y, w, h) {
+    var coords = this.as_coords();
+    var extension = Extent.to_coords(x, y, w, h);
+    coords = [
+        Math.min(coords[0], extension[0]),
+        Math.min(coords[1], extension[1]),
+        Math.max(coords[2], extension[2]),
+        Math.max(coords[3], extension[3]),
+    ];
+    this.x = coords[0];
+    this.y = coords[1];
+    this.w = coords[2] - coords[0];
+    this.h = coords[3] - coords[1];
+    return this;
+};
+
+var altoFuncs = function(elements, page_dimensions) {
     this.els = elements;
-    this.mapping = mapping;
+    this.page_dimensions = page_dimensions;
     this.events = {'mouseover': [], 'mouseout': []}
 };
 
@@ -72,7 +83,52 @@ altoFuncs.prototype.highlight = function(text) {
     this.els.text.selectAll('span').classed('active', function (d, i, m) {
         return typeof text !== 'undefined' && (d.word.meta == text);
     });
+
+    if (typeof text !== 'undefined') {
+        var extent = this.getExtent(text);
+        this.highlightExtents([extent]);
+    } else {
+        this.highlightExtents();
+    }
     return this;
+};
+
+altoFuncs.prototype.highlightExtents = function(extents) {
+    if (typeof extents === 'undefined' || extents.length === 0) {
+        this.els.extent.classed('active', false);
+        return this;
+    }
+    var els = this.els.extent.selectAll('span').data(extents);
+    els.exit().remove();
+    var appended = els.enter().append('span');
+    this.els.extent.classed('active', true);
+
+    for (var el of [els.transition().duration(500), appended]) {
+        el.style('left', function (d) { return d[0]; })
+           .style('top', function (d) { return d[1]; })
+           .style('width', function (d) { return d[2]; })
+           .style('height', function (d) { return d[3]; });
+    }
+
+    return this;
+};
+
+altoFuncs.prototype.getExtent = function(text) {
+    var extents = this.els.text.selectAll('span').filter(function (d) {
+        return d.word.meta == text;
+    }).data();
+
+    if (!extents.length) {
+        return false;
+    }
+    var extent = extents.pop().extent;
+    extent = new Extent(extent.x, extent.y, extent.w, extent.h);
+    for (var e of extents) {
+        extent.extend(e.extent.x, e.extent.y, e.extent.w, e.extent.h);
+    }
+
+    var scaler = this.scaler();
+    return scaler.scale(extent);
 };
 
 altoFuncs.prototype.on = function (eventName, handler) {
@@ -89,7 +145,37 @@ altoFuncs.prototype.handleEvent = function (eventName) {
             }
         }
     };
-}
+};
+
+altoFuncs.prototype.scaler = function scaler(newW, newH, unit) {
+    var w = this.page_dimensions[0],
+        h = this.page_dimensions[1];
+
+    if (typeof newW === 'undefined') {
+        newW = 100;
+    }
+    if (typeof newH === 'undefined') {
+        newH = 100;
+    }
+    if (typeof unit === 'undefined') {
+        unit = '%';
+    }
+
+    var x = function (coord) {
+        return (coord / w * newW) + unit;
+    };
+    var y = function (coord) {
+        return (coord / h * newH) + unit;
+    };
+    return {
+      x: x,
+      y: y,
+      scale: function (extent) {
+        return [x(extent.x), y(extent.y), x(extent.w), y(extent.h)];
+      }
+   };
+};
+
 
 var alto = function alto(selection, links) {
   return selection.each(function(d, i) {
@@ -116,12 +202,14 @@ var alto = function alto(selection, links) {
      els.main = wrap(els.wrapper, 'alto-main');
      els.text = els.wrapper.append('div').classed('alto-text', true);
      els.extra = els.main.append('div').classed('alto-extra', true);
+     els.extent = els.wrapper.append('div').classed('alto-extent', true);
 
-     this.__alto = new altoFuncs(els, data['words']);
+     this.__alto = new altoFuncs(els, data['page_dimensions']);
+     var __alto = this.__alto;
 
      var id_prefix = 'alto_' + Date.now();
 
-     var sc = scale.apply(null, data['page_dimensions']);
+     var sc = __alto.scaler();
      var alto_links = {};
 
      els.text.selectAll('span').data(data['words']).enter()
@@ -138,6 +226,13 @@ var alto = function alto(selection, links) {
            .each(function (d, i) {
            });
 
+      __alto
+          .on('mouseover', function (d) {
+            __alto.highlight(d.word.meta);
+          }).
+          on('mouseout', function () {
+            __alto.highlight();
+          });
 //      $this.data('alto-links', alto_links);
      /*
      els.extra.append('div').classed('alto-links', true)

@@ -94,7 +94,7 @@
          d3.selectAll('img.alto-image').call(alto);
          var viewer = ImageViewer($previews.find('img.preview'), { maxZoom: 1000 });
          var img = $previews.find('.iv-large-image'),
-             alto_overlay = $('.alto-text');
+             alto_overlay = $('.alto-text').add($('.alto-extent'));
 
 
          function onZoomChange() {
@@ -134,7 +134,8 @@
          var $entities = $('#pids tr.entity');
          $entities.hover(
             function () {
-              objAlto.highlight($(this).data('entity'));
+              var entity = $(this).data('entity');
+              objAlto.highlight(entity);
             },
             function () {
               objAlto.highlight();
