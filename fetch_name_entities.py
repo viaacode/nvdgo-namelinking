@@ -71,8 +71,8 @@ for idx, item in tqdm(enumerate(data), total=len(data) - start):
     entities = ner.tag(text)
     # if args.debug:
     #     print(list(entities))
-    date = [i['value'] for i in item['mdProperties'] if i['attribute'] == 'carrier_date']
-    date = date[0] if len(date) > 0 else '0000-00-00'
+    date = item['mdProperties']['carrier_date']
+    date = date[0] if len(date) else '0000-00-00'
     rows = [{
         'doc_index': idx + start,
         'entity': normalize(e[0]),

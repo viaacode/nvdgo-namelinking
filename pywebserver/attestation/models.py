@@ -1,4 +1,8 @@
 from django.db import models
+from pythonmodules.namenlijst import Namenlijst
+from pythonmodules.mediahaven import MediaHaven
+from pythonmodules.matcher import Matcher
+from pythonmodules.profiling import timeit
 
 
 class LinkBase(models.Model):
@@ -22,6 +26,8 @@ class LinkBase(models.Model):
     status = models.IntegerField(choices=STATUS_CHOICES, default=UNDEFINED, db_index=True)
     kind = models.CharField(max_length=300, default='')
     extras = models.CharField(max_length=300, default='')
+    # todo
+    # score = models.PositiveIntegerField(default=0)
 
     @property
     def url(self):
@@ -73,4 +79,18 @@ class Entities(models.Model):
         # abstract = True
 
 
-LinkNamenlijst = Link
+LinkNamenlijst = LinkNew
+
+
+class Texts(models.Model):
+    id = models.IntegerField(primary_key=True)
+    pid = models.CharField(max_length=26, db_index=True, default='')
+    text = models.TextField()
+
+
+class Words(models.Model):
+    word_hash = models.BigIntegerField(db_index=True)
+    texts = models.ForeignKey('Texts', on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = (("word_hash", "texts"),)

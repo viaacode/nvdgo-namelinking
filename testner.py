@@ -35,7 +35,7 @@ parser.add_argument('--precision', type=int, default=5,
                     help='The precision used for output of floating point numbers')
 args = parser.parse_args()
 
-loglevel = getattr(logging, args.log_level)
+loglevel = logging._nameToLevel[args.log_level]
 logger.setLevel(loglevel)
 logging.basicConfig(level=loglevel)
 

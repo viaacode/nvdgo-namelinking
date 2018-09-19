@@ -12,12 +12,13 @@ def run(*args):
     log_file_handler = logging.FileHandler('link_names.log')
     logger.addHandler(log_file_handler)
     timeit.logger.addHandler(log_file_handler)
-    logger.info('running with arguments: %s' % (' "%s"' * len(args)), *args)
+    logger.info('running with arguments: %s', args)
 
     if 'counts' in args:
         logger.info('will check counts only, will not attempt to do lookups!')
 
     if 'debug' in args:
+        logging.basicConfig(level=logging.DEBUG)
         logger.info('debug mode')
         logger.setLevel(logging.DEBUG)
 
@@ -69,6 +70,11 @@ def run(*args):
     if 'debug-sql' in args:
         logger.info('will show some sql debug info')
         logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
+
+    if 'clean' in args or not(any([a in args for a in ['debug-sql', 'debug', 'no-write', 'counts']])):
+        msg = 'Clear table %s?' % linking.link._meta.db_table
+        if input("%s (y/N) " % msg).lower() == 'y':
+            linking.clear()
 
     linking.start(people)
     logger.info(linking.counts)

@@ -19,12 +19,15 @@ body {
 	position: relative;
 	height: 800px;
 	background: #000;
-	.image-container {
+	&:not(.simple) .image-container {
+		bottom: 50px;
+	}
+	& .image-container {
 		position: absolute;
 		top: 0;
 		left: 0;
 		right: 0;
-		bottom: 50px;
+		bottom: 0;
 	}
 	.prev {
 		position: absolute;
@@ -42,7 +45,7 @@ body {
 		cursor: pointer;
 	}
 	.footer-info {
-		opacity: .5;
+		opacity: .9;
 		background-color: @background_color_1;
 		position: absolute;
 		height: 50px;
@@ -59,11 +62,9 @@ body {
 		.buttons {
 			text-align: right;
 		}
-	}
-}
-.footer-info {
-	img {
-		height: 28px;
+        img {
+            height: 28px;
+        }
 	}
 }
 .entity {
@@ -211,7 +212,11 @@ table.pure-table.pure-table-odd {
 	}
 }
 .iv-snap-view {
-	opacity: 1 !important;
+/*	opacity: 1 !important; */
+}
+
+.iv-image-view, .iv-container:not(.image-container) {
+    height: 100vh;
 }
 
 .link-status {

@@ -24,7 +24,10 @@ def _serialize(obj):
         serial = obj.attrib
         return serial
 
-    return obj.__dict__
+    if hasattr(obj, '__dict__'):
+        return obj.__dict__
+
+    return obj.__repr__()
 
 
 @register.filter(needs_autoescape=True)

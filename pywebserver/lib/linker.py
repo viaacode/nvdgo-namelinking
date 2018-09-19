@@ -7,18 +7,18 @@ from sqlalchemy.sql import select
 from queue import Queue
 from threading import Thread
 from django.db import IntegrityError
-from pythonmodules.ner import normalize
 from pythonmodules.decorators import classcache
 from pythonmodules.cache import LocalCacher
 
 import attestation.models as models
+from more_itertools import chunked
 
 from pythonmodules.profiling import timeit
 
 from tqdm import tqdm
 import logging
 
-from pythonmodules.namenlijst import Namenlijst
+from pythonmodules.namenlijst import Namenlijst, Conversions
 import pandas as pd
 from .helpers import AttributeMapper, RowWrapper
 
@@ -47,6 +47,7 @@ Datasources = {
     },
     "namenlijst": {
         "func": namenlijst,
+        'table': 'LinkNamenlijst'
     }
 }
 
@@ -122,23 +123,58 @@ class Linker:
         # filter out names that contain < or > to prevent checking the incomplete names like <...>eau
         return '<' not in name and '>' not in name
 
+    def clear(self):
+        with timeit('Clearing model %s' % self.link._meta.db_table):
+            # this doesnt reset identity and is slower...
+            # self.link.objects.all().delete()
+            self.db.execute('TRUNCATE TABLE %s RESTART IDENTITY' % self.link._meta.db_table)
+
     def get_cacher(self):
         return self.__cacher
 
-    @classcache
     def get_links(self, names):
+        results = []
+
+        hashes = map(hash, names)
+        models.Words.objects.filter()
+
+    # @classcache
+    def get_links_old(self, names):
+        # conditions = []
+        #
+        # self.log.debug("Check %s" % str(names))
+        # conditions.append(self.table.c.entity == max(names, key=len))
+        #
+        # for name in names:
+        #     alias = self.table.alias()
+        #     # selects.append(alias)
+        #     conditions.append(self.table.c.doc_index.in_(
+        #         select([alias.c.doc_index]).where(alias.c.entity == name)
+        #     ))
+        #
+        # docids = select([self.table.c.doc_index]).where(and_(*conditions)).distinct()
+        # with timeit('slow pre-select for "%s"' % (' '.join(names)), 1000):
+        #     docids = [a[0] for a in self.db.execute(docids).fetchall()]
+        #
+        # if not len(docids):
+        #     return []
+        #
+        # print('docids: %d' % len(docids))
+        #
+        results = []
+        # for ids in chunked(docids, 100):
         selects = [self.table.c.pid]
         conditions = []
+        # conditions = [self.table.c.doc_index.in_(ids)]
         joins = []
         prevalias = None
         alias = self.table
-        # self.log.debug("Check %s" % str(names))
 
         for name in names:
             if prevalias is not None:
                 distances = [prevalias.c.index - i for i in range(1, self.max_distance)]
                 distances.extend([prevalias.c.index + i for i in range(1, self.max_distance)])
-                joins.append((alias, and_(self.table.c.id == alias.c.id, alias.c.index.in_(distances))))
+                joins.append((alias, and_(self.table.c.doc_index == alias.c.doc_index, alias.c.index.in_(distances))))
             selects.append(alias.c.entity_full)
             conditions.append(alias.c.entity == name)
             prevalias = alias
@@ -151,13 +187,14 @@ class Linker:
                 join = join.join(*x)
             s = s.select_from(join)
             s = s.where(and_(*conditions))
-            results = [tuple(row) for row in self.db.execute(s).fetchall()]
+            results.extend([tuple(row) for row in self.db.execute(s).fetchall()])
 
         return results
 
     def get_results(self, nmlid, firstnames, lastnames):
         try:
             if len(firstnames) == 0 or len(lastnames) == 0:
+                self.log.info('Empty first- or lastnames')
                 return set()
 
             results = set()
@@ -175,10 +212,11 @@ class Linker:
                                                                #  if only 2 words in total
                             ])
 
+            self.log.debug('NAMES: %s', str(allnames))
             for names in allnames:
                 rows = self.get_links(names.split(' '))
-                self.log.debug("%s, check: %s: %d results", nmlid, names, len(rows))
                 if len(rows):
+                    self.log.debug("%s, check: %s: %d results", nmlid, names, len(rows))
                     results = results.union(rows)
             return results
         except Exception as e:
@@ -197,39 +235,31 @@ class Linker:
             self.counts[row[self.categorizer]]['skipped_too_freq'] += 1
             return
 
-        lastnames = row['alternative_familynames'] if 'alternative_familynames' in row else []
-        firstnames = row['alternative_surnames'] if 'alternative_surnames' in row else []
-        firstnames.append(row['firstname'])
-        lastnames.append(row['lastname'])
+        names = Conversions.get_names(row, Linker.namesfilter)
 
-        firstnames = filter(Linker.namesfilter, firstnames)
-        lastnames = filter(Linker.namesfilter, lastnames)
+        # # use first first name and first 2 firstnames
+        # fnames = []
+        # for name in names.firstnames_normalized:
+        #     names = name.split(' ')
+        #     if len(names) > 1:
+        #         fnames.extend([names[0], names[0] + ' ' + names[1]])
+        #     else:
+        #         fnames.append(name)
 
-        firstnames = set(name for name in map(normalize, firstnames) if len(name) > 1)
-        lastnames = set(name for name in map(normalize, lastnames) if len(name) > 1)
-
-        # use first first name and first 2 firstnames
-        fnames = list()
-        for name in firstnames:
-            names = name.split(' ')
-            if len(names) > 1:
-                fnames.extend([names[0], names[0] + ' ' + names[1]])
-            else:
-                fnames.append(name)
-
-        firstnames = set(fnames)
+        # firstnames = set(fnames)
 
         # remove single letter words such as 't' for eg. "edmond t kint de roodenbeke"
         # lastnames = set(' '.join((l for l in lastname.split(' ') if len(l) > 1)) for lastname in lastnames)
 
-        if len(firstnames) == 0 or len(lastnames) == 0:
+        if len(names.firstnames_normalized) == 0 or len(names.lastnames_normalized) == 0:
             self.counts[row[self.categorizer]]['skipped'] += 1
         else:
             self.counts[row[self.categorizer]]['ok'] += 1
-            self.counts[row[self.categorizer]]['alternatives'] += len(firstnames) * len(lastnames) - 1
+            self.counts[row[self.categorizer]]['alternatives'] += len(names.firstnames_normalized) * \
+                                                                  len(names.lastnames_normalized) - 1
 
         if not self.counts_only:
-            res = self.get_results(row['_id'], firstnames, lastnames)
+            res = self.get_results(row['_id'], names.firstnames_normalized, names.lastnames_normalized)
             if len(res):
                 self.counts[row[self.categorizer]]['found'] += len(res)
             self.process(res, row, idx)

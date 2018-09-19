@@ -27,7 +27,7 @@
        <button class="pure-button yellow toggle-button">More info...</button>
        <table class="pure-table pure-table-striped">
           <tbody>
-            <tr> <td>Publicatie datum</td> <td>{{ props.carrier_date }}</td> </tr>
+            <tr> <td>Publicatie datum</td> <td>{{ props.carrier_date.0 }}</td> </tr>
             <tr> <td>Titel</td> <td>{{ meta.title }}</td> </tr>
             <tr> <td>mediaObjectId</td> <td>{{ meta.mediaObjectId }}</td> </tr>
             <tr> <td>hetarchief</td> <td><a href="https://hetarchief.be/en/pid/{{ pid|slice:"0:10" }}/{{ pid|slice:"-2:2" }}" target="_blank">
@@ -60,7 +60,8 @@
                           <img src="{% static logo %}" alt="" />
                       {% endwith %}
                       </a></li>
-                      <li class="pure-menu-item entity">{{ entity }} ({{ props.carrier_date }})</li>
+
+                      <li class="pure-menu-item entity">{{ entity }} ({{ props.carrier_date.0 }})</li>
                     </ul>
                   </div>
               </div>
@@ -144,6 +145,7 @@
              }
          }
          $(window).resize(onResize);
+         onResize();
 
          var images = [];
          $('img.preview').each(function () {

@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from . import models
 from django.db.models import Count
-from lib.previews import get_info
+from lib.previews import get_info, Rater
 from django.http.response import HttpResponse
 from io import BytesIO
 import matplotlib
@@ -42,7 +42,13 @@ def pid(request, pid, model=None):
     context = get_info(pid, words, extra_previews=False)
     context['model'] = model
     context['Link'] = link
+
+    rates = []
+    for link in links:
+        rater = Rater(link.pid, link.nmlid)
+        rates.append(rater.ratings())
     context['links'] = links
+    context['rates'] = rates
 
     return __render(request, 'pid.html', context=context)
 
@@ -51,7 +57,7 @@ def info(request, pid, nmlid, words='', model=None):
     if model is None:
         model = DEFAULT_MODEL
     words = words.split('/')
-    context = get_info(pid, words)
+    context = get_info(pid, [words])
     context['nmlid'] = nmlid
     context['model'] = model
     context['Link'] = get_model(model)

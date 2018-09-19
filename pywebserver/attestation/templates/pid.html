@@ -21,24 +21,10 @@
  <body>
 
     <div class="pure-g">
-        <div id="previews" class="pure-u-1-2">
+        <div id="previews" class="pure-u-1-2 simple">
           <div class="image-container">
               <img class="pure-img preview alto-image" src="{{ previewImageUrl }}" alt="{{ pid }}" title="{{ meta.title }}" data-alto="{{ alto | json:"auto_escape=True" }}">
           </div>
-           <div class="footer-info">
-              <div class="pure-g">
-                  <div class="pure-u-1-1 links">
-                      <div class="pure-menu pure-menu-horizontal">
-                        <ul class="pure-menu-list">
-                          <li class="pure-menu-item">&nbsp;</li>
-                          <li class="pure-menu-item"><a href="https://hetarchief.be/en/pid/{{ pid|slice:"0:10" }}/{{ pid|slice:"-4:"|add:"0" }}" target="_blank" title="Open artikel op hetarchief.be" ><img src="{% static "img/archief-logo.png" %}" alt="" /></a></li>
-
-                          <li class="pure-menu-item entity">{{ meta.title }} ({{ props.carrier_date }})</li>
-                        </ul>
-                      </div>
-                  </div>
-              </div>
-           </div>
         </div>
 
        <div class="pure-u-1-2" id="pids">
@@ -47,14 +33,16 @@
                 <tr> <td>Publicatie datum</td> <td>{{ props.carrier_date }}</td> </tr>
                 <tr> <td>Titel</td> <td>{{ meta.title }}</td> </tr>
                 <tr> <td>mediaObjectId</td> <td>{{ meta.mediaObjectId }}</td> </tr>
-                <tr> <td>hetarchief</td> <td><a href="https://hetarchief.be/en/pid/{{ pid|slice:"0:10" }}/{{ pid|slice:"-2:2" }}" target="_blank">
+                <tr> <td><img height="18" src="{% static "img/archief-logo.png" %}" alt="" /> Het archief</td> <td><a href="https://hetarchief.be/en/pid/{{ pid|slice:"0:10" }}/{{ pid|slice:"-2:2" }}" target="_blank">
                   https://hetarchief.be/en/pid/{{ pid|slice:"0:10" }}/{{ pid|slice:"-2:2" }}
+
+
                 </a></td> </tr>
                 <tr> <td>OCR</td><td>{{ meta.description | linebreaks }}</td> </tr>
                 {% comment %}
-                <tr> <td>alto</td><td>{{ alto | json | linebreaks }}</td> </tr>
+                <tr> <td>Alto</td><td>{{ alto | json | linebreaks }}</td> </tr>
                 {% endcomment %}
-                <tr> <th>Entities</th> <th>Corresponding id</th> </tr>
+                <tr> <th>Entity</th> <th>Corresponding id</th> </tr>
                 {% for link in links %}
                 <tr class="entity" data-entity="{{ link.entity }}">
                   <td>{{ link.entity }} </td>
@@ -68,6 +56,7 @@
                       {% endwith %}
                   </td> </tr>
                 {% endfor %}
+                <tr><td colspan="2"><pre>{{ rates|json }}</pre></td></tr>
               </tbody>
             </table>
         </div>
@@ -91,7 +80,17 @@
              {% endfor %}
          ];
 
+         function onResize() {
+	         if (ih != window.innerHeight) {
+	             ih = window.innerHeight;
+                 $previews.css('height', ih + 'px');
+             }
+         }
+         $(window).resize(onResize);
+
          d3.selectAll('img.alto-image').call(alto);
+
+         onResize();
          var viewer = ImageViewer($previews.find('img.preview'), { maxZoom: 1000 });
          var img = $previews.find('.iv-large-image'),
              alto_overlay = $('.alto-text').add($('.alto-extent'));
@@ -108,12 +107,6 @@
              alto_overlay.css(css);
          }
 
-         function onResize() {
-	         if (ih != window.innerHeight) {
-	             ih = window.innerHeight;
-                 $previews.css('height', ih + 'px');
-             }
-         }
 
          // hack jQuery css to trigger a cssChange event
          (function() {
@@ -153,7 +146,6 @@
                 });
 
          img.on('cssChange', onZoomChange);
-         $(window).resize(onResize);
          onResize();
      });
 
