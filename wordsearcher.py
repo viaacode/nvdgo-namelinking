@@ -33,7 +33,6 @@ class Commands:
         imps.add_argument('--offset', default=None, type=int, 
                           help='Continue from offset (default: %(default)s)')
 
-
         for p in parsers.values():
             p.add_argument('--path', help='The path to the indexes directory (default: %(default)s)',
                            default='./indexes')

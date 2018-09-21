@@ -100,6 +100,8 @@ ENV/
 .mypy_cache/
 
 config.ini
+nogit/
+notebooks/
 .DS_Store
 db.sqlite3
 .idea
