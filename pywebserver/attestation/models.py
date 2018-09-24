@@ -84,17 +84,10 @@ class Entities(models.Model):
 
 
 LinkNamenlijst = LinkSolr
+LinkOld = Link
 
 
 class Texts(models.Model):
     id = models.IntegerField(primary_key=True)
     pid = models.CharField(max_length=26, db_index=True, default='')
     text = models.TextField()
-
-
-class Words(models.Model):
-    word_hash = models.BigIntegerField(db_index=True)
-    texts = models.ForeignKey('Texts', on_delete=models.CASCADE)
-
-    class Meta:
-        unique_together = (("word_hash", "texts"),)

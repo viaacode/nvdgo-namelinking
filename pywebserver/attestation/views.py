@@ -3,10 +3,12 @@ from . import models
 from django.db.models import Count
 from lib.previews import get_info, Rater
 from django.http.response import HttpResponse
+from django.http.response import HttpResponseNotFound
 from io import BytesIO
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+
 
 DEFAULT_MODEL = 'namenlijst'
 
@@ -76,7 +78,10 @@ def info(request, pid, nmlid, words='', model=None):
 
 
 def progress(request, model=None):
-    model = get_model(model)
+    try:
+        model = get_model(model)
+    except KeyError:
+        return HttpResponseNotFound('<h1>Link type "%s" not found</h1>' % model)
     data = model.objects.all().values('status').annotate(total=Count('status'))
     notdone_count = [p['total'] for p in data if p['status'] == model.UNDEFINED][0]
     data = [p for p in data if p['status'] not in [model.UNDEFINED, model.SKIP]]

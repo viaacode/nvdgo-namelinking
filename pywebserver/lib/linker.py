@@ -124,7 +124,8 @@ class Linker:
 
     def get_links(self, names):
         results = []
-        res = self._solr.search('text:("%s")' % '" AND "'.join(names), rows=100000, fl='id')
+        res = self._solr.search(r'text:"\"%s\""~1' % r'\") (\"'.join(names), rows=100000, fl='id')
+        # res = self._solr.search('text:("%s")' % '" AND "'.join(names), rows=100000, fl='id')
         if not len(res):
             return results
 
