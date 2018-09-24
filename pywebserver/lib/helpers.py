@@ -1,6 +1,6 @@
 
 class GeneratorLimit(object):
-    def __init__(self, gen, limit):
+    def __init__(self, gen, limit: int):
         self.gen = iter(gen)
         self.limit = limit
 
@@ -9,6 +9,21 @@ class GeneratorLimit(object):
 
     def __iter__(self):
         return (next(self.gen) for i in range(self.limit))
+
+
+class GeneratorSkip(object):
+    def __init__(self, gen, offset: int):
+        self.gen = iter(gen)
+        self.offset = offset
+
+    def __len__(self):
+        return len(self.gen) - self.offset
+
+    def __iter__(self):
+        for i, item in enumerate(self.gen):
+            if i < self.offset:
+                continue
+            yield next(self.gen)
 
 
 class AttributeMapper(dict):

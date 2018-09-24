@@ -3,7 +3,7 @@
 from pythonmodules.profiling import timeit
 import logging
 from lib.linker import Linker, Datasources, AttributeMapper
-from lib.helpers import GeneratorLimit
+from lib.helpers import GeneratorLimit, GeneratorSkip
 
 
 def run(*args):

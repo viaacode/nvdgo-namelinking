@@ -256,7 +256,7 @@ class Linker:
             res = self.get_results(row['_id'], names.firstnames_normalized, names.lastnames_normalized)
             if len(res):
                 self.counts[row[self.categorizer]]['found'] += len(res)
-            self.process(res, row, idx)
+                self.process(res, row, idx)
 
     def worker(self):
         while True:
