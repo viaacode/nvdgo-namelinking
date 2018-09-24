@@ -100,7 +100,7 @@ WSGI_APPLICATION = 'pywebserver.wsgi.application'
 conf = Config(section='db')
 
 DATABASES = {
-    'default': dj_database_url.config(default=conf.connection_url)
+    'default': dj_database_url.config(default=conf.connection_url_live)
 }
 # DATABASES['default']['ENGINE'] = 'psqlextra.backend'
 

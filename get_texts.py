@@ -27,6 +27,7 @@ parser = ArgumentParser(description='Import ocr texts to solr')
 parser.add_argument('--clear', action='store_true', help='Clear the table before inserting')
 parser.add_argument('--continue-from', help='Continue from row CONTINUE_FROM')
 parser.add_argument('--debug', action='store_true', help='Show debug info')
+parser.add_argument('--test', action='store_true', help='Run test')
 args = parser.parse_args()
 
 log_level = logging.DEBUG if args.debug else logging.INFO
@@ -56,6 +57,9 @@ def onslow(ms, is_slow, txt, *args):
         # logger.warning('[SLOW %s:%dms]', txt, ms)
         progress.set_description('[SLOW %s:%dms]' % (txt, ms))
         progress.refresh()
+        logger.warning('Slow processing "%s" %dms' % (txt, ms))
+    else:
+        logger.info('Processed %s in %dms' % (txt, ms))
     pass
 
 
@@ -79,17 +83,21 @@ class ImportWords:
 
     # @multithreadedmethod(2)
     def write(self, buf, thread_id=None):
-        logger.info("Writing %d to solr" % len(buf))
+        logger.info("Writing %d to solr", len(buf))
         # print(buf)
-        # self.solr.add(buf)
+        self._solr.add(buf)
 
     def add(self, item):
+        logger.debug('append to queue (add to %d items) %s', len(self._buffer[0]), item)
         self._buffer[0].append(item)
         self.check_progress_buffer()
 
-    @multithreadedmethod(2, pbar=progress)
-    # @singlethreadedmethod(5, pbar=progress)
-    def process(self, real_idx, item):
+    @singlethreadedmethod(5, pbar=progress, pass_thread_id=False)
+    def process(self, item):
+        real_idx, item = item
+        if item is None:
+            raise Exception("args: %s" % str(real_idx))
+        # logger.debug('process %d ' % real_idx)
         pid = item['externalId']
         if not pid:
             raise "No pid for item %s" % (item,)
@@ -106,14 +114,19 @@ class ImportWords:
             start_from = 0
 
         with timeit('MH Search'):
-            data = self._mh.search('+(workflow:GMS) +(archiveStatus:on_tape)', start)
+            if args.test:
+                data = [{"test": True} for a in range(0, 10)]
+            else:
+                data = self._mh.search('+(workflow:GMS) +(archiveStatus:on_tape)', start)
 
-        total = len(data) - start_from
+            total = len(data) - start_from
+
         progress.total = total
         self.process(enumerate(data, 1 + start_from))
         self.check_progress_buffer(force=True)
+        progress.close()
 
 
-importer = ImportWords(4)
+importer = ImportWords(50)
 importer.start()
 

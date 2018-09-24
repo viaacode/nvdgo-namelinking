@@ -24,11 +24,6 @@ class Commands:
         prof.add_argument('--no-file', default=False, action='store_true',
                           help='Do not write the profiling output to file')
 
-        inde = parsers['buildindex']
-        inde.add_argument('--no-skip', default=False, action='store_true',
-                          help='Also regenerate indexes that already exist')
-        
-
         imps = parsers['importsolr']
         imps.add_argument('--offset', default=None, type=int, 
                           help='Continue from offset (default: %(default)s)')
@@ -63,15 +58,6 @@ class Commands:
             self.logger.warning('Profiling results are being ignored (no callbacks)')
 
         self.searcher.do_profiling(threads=self.args.threads, callback=cb)
-
-    def buildindex(self):
-        self.searcher.build_index(skip_if_exists=not self.args.no_skip)
-
-    def buildreverseindex(self):
-        self.searcher.build_reverse_index()
-
-    def buildpidmap(self):
-        self.searcher.build_pid_map()
 
     def importsolr(self):
         self.searcher.import_solr()

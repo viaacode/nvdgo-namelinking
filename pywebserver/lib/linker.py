@@ -8,7 +8,10 @@ from queue import Queue
 from threading import Thread
 from django.db import IntegrityError
 from pythonmodules.decorators import classcache
+from pythonmodules.config import Config
 from pythonmodules.cache import LocalCacher
+
+from pysolr import Solr
 
 import attestation.models as models
 from more_itertools import chunked
@@ -63,20 +66,19 @@ class Linker:
         self.bar = None
         self.categorizer = categorizer if categorizer is not None else 'victim_type'
         self.__cacher = LocalCacher(200)
-        self.log = logging.getLogger('link_names')
-        config = configparser.ConfigParser()
+        self.log = logging.getLogger(__name__)
+        config = Config()
         if table is None:
             table = 'Link'
         self.link = models.__dict__[table]
 
         self.log.debug("Will write to %s '%s'" % (table, str(self.link)))
-        config.read('config.ini')
-
-        self.db = create_engine(config['db']['connection_url'])
+        self._solr = Solr(config['wordsearcher']['solr'])
+        self.db = create_engine(config['db']['connection_url_live'])
         self.db.connect()
-        meta = MetaData(self.db)
-        meta.reflect()
-        self.table = meta.tables[config['db']['table_name']]
+        # meta = MetaData(self.db)
+        # meta.reflect()
+        # self.table = meta.tables[config['db']['table_name']]
 
         if not no_skips:
             self.to_skip = set(models.Link.objects.filter(status=models.Link.SKIP)
@@ -102,21 +104,9 @@ class Linker:
 
     def process(self, res, row, idx):
         nmlid = row['_id']
-
-        for r in res:
-            try:
-                pid = r[0].strip()
-                entity = ' '.join(r[1:])
-                uq = dict(nmlid=nmlid, entity=entity, pid=pid)
-                self.log.debug(uq)
-                # if not Link.objects.filter(**uq).exists():
-                if not self.no_write:
-                    with timeit('slow create %s' % str(uq), 200):
-                        self.link.objects.create(**uq)
-            except IntegrityError:
-                pass
-            except Exception as e:
-                self.log.exception('[%d] err for %s: %s' % (idx, nmlid, e))
+        values = (self.link(nmlid=nmlid, pid=r[0].strip(), entity=' '.join(r[1:])) for r in res)
+        self.link.objects.bulk_create(values)
+        return
 
     @staticmethod
     def namesfilter(name):
@@ -134,9 +124,13 @@ class Linker:
 
     def get_links(self, names):
         results = []
+        res = self._solr.search('text:("%s")' % '" AND "'.join(names), rows=100000, fl='id')
+        if not len(res):
+            return results
 
-        hashes = map(hash, names)
-        models.Words.objects.filter()
+        name = ' '.join(names)
+        results.extend([(item['id'], name) for item in res.docs])
+        return results
 
     # @classcache
     def get_links_old(self, names):
@@ -204,15 +198,15 @@ class Linker:
                     self.log.debug('"%s" "%s"' % (fname, lname))
 
             allnames = [fname + ' ' + lname for fname in firstnames for lname in lastnames]
-            allnames.extend([
-                              lname + ' ' + fname
-                              for fname in firstnames
-                              for lname in lastnames
-                              if ' ' in lname or ' ' in fname  # optim: no need to check reverse order
-                                                               #  if only 2 words in total
-                            ])
+            # allnames.extend([
+            #                   lname + ' ' + fname
+            #                   for fname in firstnames
+            #                   for lname in lastnames
+            #                   if ' ' in lname or ' ' in fname  # optim: no need to check reverse order
+            #                                                    #  if only 2 words in total
+            #                 ])
 
-            self.log.debug('NAMES: %s', str(allnames))
+            allnames = sorted(allnames, key=len, reverse=True)
             for names in allnames:
                 rows = self.get_links(names.split(' '))
                 if len(rows):

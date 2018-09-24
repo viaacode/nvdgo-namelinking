@@ -61,7 +61,7 @@ def run(*args):
         if len(people) > int(args[0]):
             people = GeneratorLimit(people, int(args[0]))
 
-    linking = Linker(5 if 'consecutive' not in args else 1,
+    linking = Linker(8 if 'consecutive' not in args else 1,
                      counts_only='counts' in args,
                      no_skips='no-skips' in args,
                      no_write='no-write' in args,
