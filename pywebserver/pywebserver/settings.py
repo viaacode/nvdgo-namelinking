@@ -115,9 +115,15 @@ CACHES = {
         'LOCATION': '/tmp/pywebserver_cache/mediahaven',
         'TIMEOUT': 31536000,  # cache for a year
         'OPTIONS': {
-            'MAX_ENTRIES': 1000
+            'MAX_ENTRIES': 10000
         }
     }
+}
+
+log_screen = {
+    'level': 'DEBUG',
+    'handlers': ['console'],
+    'propagate': False,
 }
 
 LOGGING = {
@@ -165,11 +171,8 @@ LOGGING = {
             'handlers': ['console', 'file'],
             'propagate': False,
         },
-        'pythonmodules': {
-            'level': 'DEBUG',
-            'handlers': ['console'],
-            'propagate': False,
-        }
+        'pythonmodules': log_screen,
+        'pythonmodules.matcher': log_screen
     }
 }
 

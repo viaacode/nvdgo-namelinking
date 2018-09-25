@@ -52,7 +52,7 @@
                       {% endwith %}
                       {% with link.entity|replace:" :/" as namepart %}
                       <a href="{% url 'info' model=model pid=link.pid nmlid=link.nmlid words=namepart %}" title="Open in attestation">{{ link.nmlid }}</a>
-                             <i class="link-status {{ link.status_class }}" title="{{ link.status_text }}"></i>
+                             <i class="link-status {{ link.status_class }}" title="{{ link.status_text }}">({{ link.status_text }})</i>
                       {% endwith %}
                   </td> </tr>
                 {% endfor %}

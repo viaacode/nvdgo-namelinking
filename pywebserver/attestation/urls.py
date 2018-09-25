@@ -3,7 +3,7 @@ from django.conf.urls import url
 from . import views
 from .models import Link
 from jsonrpc.backend.django import api
-from lib.previews import get_info
+from lib import previews
 from django.forms.models import model_to_dict
 
 urlpatterns = [
@@ -17,7 +17,7 @@ urlpatterns = [
 
 @api.dispatcher.add_method
 def get_info(pid, words=[], request=None):
-    return get_info(pid, words)
+    return previews.get_info(pid, words)
 
 
 @api.dispatcher.add_method

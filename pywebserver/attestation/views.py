@@ -1,10 +1,11 @@
 from django.shortcuts import render
 from . import models
 from django.db.models import Count
-from lib.previews import get_info, Rater
+from lib.previews import get_info, get_media_haven
 from django.http.response import HttpResponse
 from django.http.response import HttpResponseNotFound
 from io import BytesIO
+from pythonmodules.matcher import Rater
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -47,7 +48,7 @@ def pid(request, pid, model=None):
 
     rates = []
     for link in links:
-        rater = Rater(link.pid, link.nmlid)
+        rater = Rater(link.pid, link.nmlid, get_media_haven())
         rates.append(rater.ratings())
     context['links'] = links
     context['rates'] = rates
@@ -74,6 +75,8 @@ def info(request, pid, nmlid, words='', model=None):
         context['status'] = context['Link'].UNDEFINED
         context['url'] = ''
 
+    rater = Rater(pid, nmlid, get_media_haven())
+    context['rating'] = rater.ratings()
     return __render(request, 'info.html', context=context)
 
 

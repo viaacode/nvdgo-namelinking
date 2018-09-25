@@ -31,8 +31,8 @@ class LinkBase(models.Model):
 
     @property
     def url(self):
-        return 'https://database.namenlijst.be/publicsearch/#/person/_id=%s' % self.nmlid
-        # return 'https://database.namenlijst.be/#/person/_id=%s' % self.nmlid
+        # return 'https://database.namenlijst.be/publicsearch/#/person/_id=%s' % self.nmlid
+        return 'https://database.namenlijst.be/#/person/_id=%s' % self.nmlid
 
     @property
     def status_class(self):

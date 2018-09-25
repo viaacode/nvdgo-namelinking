@@ -85,6 +85,24 @@ class Linker:
                                            .order_by('nmlid').values_list('nmlid', flat=True)
                                            .distinct())
 
+        # quick hack to write skips to csv
+        #
+        # with open('skips.csv', 'w+') as f:
+        #     f.write('nmlid,name\n')
+        #     for nmlid in tqdm(self.to_skip):
+        #         nml = Namenlijst()
+        #         p = nml.findPerson(document={"_id": nmlid}, limit=1)
+        #         err = False
+        #         try:
+        #             p = next(p)
+        #         except StopIteration:
+        #             name = '[NOTFOUND]'
+        #             err = True
+        #         if not err:
+        #             name = '%s, %s' % (p['familyname'], p['surname'])
+        #         f.write('%s,"%s"\n' % (nmlid, name))
+        # exit()
+
         self.counts_only = bool(counts_only)
         self.no_write = bool(no_write)
         self.log.info('found %d nmlids to skip' % len(self.to_skip))

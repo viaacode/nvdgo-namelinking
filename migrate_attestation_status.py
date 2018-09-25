@@ -7,7 +7,8 @@ from pythonmodules.profiling import timeit
 from argparse import ArgumentParser
 
 
-parser = ArgumentParser(description='Migrat statuses between attestation_link tables')
+parser = ArgumentParser(
+    description='Migrate statuses between attestation_link tables (doesn\'t overwrite if a status already set)')
 parser.add_argument('from_table', help='Origin table')
 parser.add_argument('to_table', help='Target table')
 args = parser.parse_args()
