@@ -6,6 +6,9 @@ import re
 
 from xml.etree import ElementTree
 import datetime
+import logging
+
+logger = logging.getLogger('pythonmodules.previews')
 
 register = template.Library()
 
@@ -31,21 +34,27 @@ def _serialize(obj):
 
 
 @register.filter(needs_autoescape=True)
-def highlight(text, word, regex=False, autoescape=True):
+def highlight(text, word, regex=False, autoescape=True, case_insensitive=True):
     if autoescape:
         text = conditional_escape(text)
         word = conditional_escape(word)
 
-    if not regex:
-        return mark_safe(text.replace(word, '<mark>%s</mark>' % word))
+    if not case_insensitive:
+        if not regex:
+            logger.info('noregex word = %s ', word)
+            return mark_safe(text.replace(word, '<mark>%s</mark>' % word))
 
-    return mark_safe(re.sub(word, r'<mark>\1</mark>', text))
+    if not regex:
+        word = re.escape(word)
+
+    logger.info("word = %s ", word)
+    return mark_safe(re.sub(word, r'<mark>\1</mark>', text, flags=re.IGNORECASE if case_insensitive else None))
 
 
 @register.filter(needs_autoescape=True)
-def highlight_words(text, words, autoescape=True):
+def highlight_words(text, words, autoescape=True, case_insensitive=True):
     regex = '(%s)' % words.replace(' ', '\W*')
-    return highlight(text, regex, regex=True, autoescape=autoescape)
+    return highlight(text, regex, regex=True, autoescape=autoescape, case_insensitive=case_insensitive)
 
 
 @register.filter(name='json')

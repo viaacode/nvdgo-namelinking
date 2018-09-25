@@ -74,7 +74,7 @@ class Linker:
 
         self.log.debug("Will write to %s '%s'" % (table, str(self.link)))
         self._solr = Solr(config['wordsearcher']['solr'])
-        self.db = create_engine(config['db']['connection_url_live'])
+        self.db = create_engine(config['db']['connection_url'])
         self.db.connect()
         # meta = MetaData(self.db)
         # meta.reflect()
@@ -96,8 +96,8 @@ class Linker:
             t.daemon = True
             t.start()
 
-    def start(self, df):
-        self.bar = tqdm(total=len(df))
+    def start(self, df, initial=0):
+        self.bar = tqdm(total=len(df), initial=initial)
         for row in enumerate(df):
             self.q.put(row)
         self.q.join()
@@ -123,15 +123,11 @@ class Linker:
         return self.__cacher
 
     def get_links(self, names):
-        results = []
         res = self._solr.search(r'text:"\"%s\""~1' % r'\") (\"'.join(names), rows=100000, fl='id')
-        # res = self._solr.search('text:("%s")' % '" AND "'.join(names), rows=100000, fl='id')
         if not len(res):
-            return results
-
+            return []
         name = ' '.join(names)
-        results.extend([(item['id'], name) for item in res.docs])
-        return results
+        return [(item['id'], name) for item in res.docs]
 
     # @classcache
     def get_links_old(self, names):

@@ -73,7 +73,6 @@ def get_info(pid, words=None, extra_previews=True):
         img.save(data, format='JPEG', quality=85)
         return base64.b64encode(data.getvalue()).decode()
 
-    logger.debug('words', str(words))
     mh = get_media_haven()
     result = dict(
         pid=pid,

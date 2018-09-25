@@ -54,12 +54,12 @@ def run(*args):
 
     logger.info("Using datasource '%s'" % datasource)
     datasource = Datasources[datasource]
-    people = datasource['func'](document=document, options=options)
 
+    extra_kwargs = {}
     if len(args) and args[0].isdigit():
-        logger.info('will only do first %s' % args[0])
-        if len(people) > int(args[0]):
-            people = GeneratorLimit(people, int(args[0]))
+        logger.warning('will skip %s', args[0])
+        extra_kwargs['skip'] = int(args[0])
+    people = datasource['func'](document=document, options=options, **extra_kwargs)
 
     linking = Linker(8 if 'consecutive' not in args else 1,
                      counts_only='counts' in args,
@@ -71,10 +71,10 @@ def run(*args):
         logger.info('will show some sql debug info')
         logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
 
-    if 'clean' in args or not(any([a in args for a in ['debug-sql', 'debug', 'no-write', 'counts']])):
+    if 'clean' in args or not(any([a in args for a in ['debug-sql', 'debug', 'no-write', 'counts']])) and 'skip' not in extra_kwargs:
         msg = 'Clear table %s?' % linking.link._meta.db_table
         if input("%s (y/N) " % msg).lower() == 'y':
             linking.clear()
 
-    linking.start(people)
+    linking.start(people, extra_kwargs['skip'] if 'skip' in extra_kwargs else 0)
     logger.info(linking.counts)
