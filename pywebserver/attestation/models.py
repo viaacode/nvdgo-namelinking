@@ -1,8 +1,4 @@
 from django.db import models
-from pythonmodules.namenlijst import Namenlijst
-from pythonmodules.mediahaven import MediaHaven
-from pythonmodules.matcher import Matcher
-from pythonmodules.profiling import timeit
 
 
 class LinkBase(models.Model):
@@ -26,8 +22,7 @@ class LinkBase(models.Model):
     status = models.IntegerField(choices=STATUS_CHOICES, default=UNDEFINED, db_index=True)
     kind = models.CharField(max_length=300, default='')
     extras = models.CharField(max_length=300, default='')
-    # todo
-    # score = models.PositiveIntegerField(default=0)
+    score = models.FloatField(default=0)
 
     @property
     def url(self):

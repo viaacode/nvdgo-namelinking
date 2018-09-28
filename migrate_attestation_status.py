@@ -14,7 +14,7 @@ parser.add_argument('to_table', help='Target table')
 args = parser.parse_args()
 
 config = Config(section='db')
-conn = psycopg2.connect(config['connection_url_live'])
+conn = psycopg2.connect(config['connection_url'])
 cur = conn.cursor()
 cur2 = conn.cursor()
 with timeit('SELECT', 5000):
