@@ -73,7 +73,7 @@ class Linker:
         self.link = models.__dict__[table]
 
         self.log.debug("Will write to %s '%s'" % (table, str(self.link)))
-        self._solr = Solr(config['wordsearcher']['solr'])
+        self._solr = Solr(config['solr']['url'])
         self.db = create_engine(config['db']['connection_url'])
         self.db.connect()
         # meta = MetaData(self.db)
