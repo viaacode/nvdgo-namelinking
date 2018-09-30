@@ -20,11 +20,7 @@ def hasher(b):
     return crc32(b.encode('utf-8'))
 
 
-use_bulk = False
-
-
 parser = ArgumentParser(description='Import ocr texts to solr')
-parser.add_argument('--clear', action='store_true', help='Clear the table before inserting')
 parser.add_argument('--continue-from', help='Continue from row CONTINUE_FROM')
 parser.add_argument('--debug', action='store_true', help='Show debug info')
 parser.add_argument('--test', action='store_true', help='Run test')
@@ -47,10 +43,6 @@ if start:
     logger.info('Continuing from %d', start)
 
 
-# if start == 0 and args.clear:
-    # truncate collection first
-    # todo
-
 def onslow(ms, is_slow, txt, *args):
     global progress
     if is_slow:
@@ -72,27 +64,22 @@ class ImportWords:
     def __init__(self, buffer_size=10):
         self._buffer = deque([[], []])
         self._buffer_size = buffer_size
-        self._solr = Solr(Config(section='wordsearcher')['solr'])
+        self._solr = Solr(Config(section='solr')['url'])
         self._mh = MediaHaven()
 
     def check_progress_buffer(self, force=False):
         if not force and len(self._buffer[0]) < self._buffer_size:
             return
         self._buffer.append([])
-        self.write(self._buffer.popleft())
-
-    # @multithreadedmethod(2)
-    def write(self, buf, thread_id=None):
-        logger.info("Writing %d to solr", len(buf))
-        # print(buf)
+        buf = self._buffer.popleft()
+        logger.debug("Writing %d to solr", len(buf))
         self._solr.add(buf)
 
     def add(self, item):
-        logger.debug('append to queue (add to %d items) %s', len(self._buffer[0]), item)
         self._buffer[0].append(item)
         self.check_progress_buffer()
 
-    @singlethreadedmethod(5, pbar=progress, pass_thread_id=False)
+    @multithreadedmethod(8, pbar=progress, pre_start=True, pass_thread_id=False)
     def process(self, item):
         real_idx, item = item
         if item is None:
@@ -101,13 +88,19 @@ class ImportWords:
         pid = item['externalId']
         if not pid:
             raise "No pid for item %s" % (item,)
+        language = ''
+        try:
+            language = item['mdProperties']['language'][0].lower()
+        except Exception as e:
+            logger.warning('no language found for %s', pid)
+            logger.exception(e)
         alto = self._mh.get_alto(pid)
         if not alto:
             logger.warning("no alto for #%d pid '%s' " % (real_idx, pid))
             text = ''
         else:
             text = Conversions.normalize(alto.text)
-        self.add(dict(text=text, pid=pid))
+        self.add(dict(id=pid, text=text, language=language))
 
     def start(self, start_from=None):
         if start_from is None:
