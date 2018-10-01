@@ -6,7 +6,7 @@ from tqdm import tqdm
 from pythonmodules.profiling import timeit
 from argparse import ArgumentParser
 from pythonmodules.mediahaven import MediaHaven
-from pythonmodules.matcher import Rater
+from lib.matcher import Rater
 from pythonmodules.cache import LocalCacher
 import logging
 

@@ -33,7 +33,7 @@ class Importer:
             pid = item['externalId']
         else:
             pid = item
-            item = self._mh.one(pid)
+            item = self._mh.one('+(externalId:%s)' % pid)
 
         if not pid:
             raise "No pid for item %s" % (item,)

@@ -172,7 +172,12 @@ LOGGING = {
             'propagate': False,
         },
         'pythonmodules': log_screen,
-        'pythonmodules.matcher': log_screen
+        'pythonmodules.decorators': {
+            'level': 'INFO',
+            'handlers': ['console'],
+            'propagate': False,
+        },
+        'lib.matcher': log_screen
     }
 }
 

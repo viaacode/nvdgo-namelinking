@@ -5,7 +5,7 @@ from lib.previews import get_info, get_media_haven
 from django.http.response import HttpResponse
 from django.http.response import HttpResponseNotFound
 from io import BytesIO
-from pythonmodules.matcher import Rater
+from lib.matcher import Rater
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
