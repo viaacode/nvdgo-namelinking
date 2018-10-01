@@ -177,7 +177,12 @@ LOGGING = {
             'handlers': ['console'],
             'propagate': False,
         },
-        'lib.matcher': log_screen
+        'lib.matcher': log_screen,
+        'pysolr': {
+            'level': 'WARN',
+            'handlers': ['console', 'file'],
+            'propagate': False,
+        },
     }
 }
 

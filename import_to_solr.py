@@ -19,12 +19,14 @@ logger = logging.getLogger(__name__)
 logger.propagate = True
 logger.setLevel(log_level)
 
+logging.getLogger('pysolr').setLevel(logging.WARNING)
+
 if args.continue_from:
     start = int(args.continue_from)
 elif args.continue_:
     solr = Solr(Config(section='solr')['url'])
     res = solr.search(q='*:*', rows=1)
-    start = res.hits
+    start = max(res.hits - 1000, 0)
 else:
     start = 0
 
