@@ -6,9 +6,9 @@ from pythonmodules.config import Config
 from tqdm import tqdm
 from pythonmodules.namenlijst import Conversions
 from pythonmodules.profiling import timeit
-from collections import deque
 from pysolr import Solr
 from pythonmodules.multithreading import *
+from pythonmodules.cache import DummyCacher
 
 import logging
 from functools import partial
@@ -62,27 +62,37 @@ class BulkImporter(Importer):
         self.progress = None
         self.timeit = partial(timeit, min_time=1000, callback=self.onslow)
 
+    def msg(self, message, *args):
+        if self.progress is None:
+            return
+        if len(args):
+            message = message % args
+        self.progress.set_description(message)
+        # self.progress.refresh()
+
     def onslow(self, ms, is_slow, txt, *args):
         if is_slow:
             # logger.warning('[SLOW %s:%dms]', txt, ms)
-            self.progress.set_description('[SLOW %s:%dms]' % (txt, ms))
-            self.progress.refresh()
+            self.msg('[SLOW %s:%dms]', txt, ms)
             logger.warning('Slow processing "%s" %dms' % (txt, ms))
         else:
             logger.info('Processed %s in %dms' % (txt, ms))
 
     def check_progress_buffer(self, force=False):
-        if not force and len(self._buffer) < self._buffer_size:
+        l = len(self._buffer)
+        if not force and l < self._buffer_size:
+            self.msg('bufsize: %d', l)
             return
         buf, self._buffer = self._buffer, []
         logger.debug("Writing %d to solr", len(buf))
         self._solr.add(buf)
+        self.msg('Written %d items to solr', len(buf))
 
     def add(self, item):
         self._buffer.append(item)
         self.check_progress_buffer()
 
-    @multithreadedmethod(8, queue_buffer_size=500, pre_start=True, pass_thread_id=False)
+    @multithreadedmethod(10, queue_buffer_size=200, pre_start=True, pass_thread_id=False)
     def process(self, item, *args, **kwargs):
         idx, new_item = item
         super().process(new_item, *args, **kwargs)
