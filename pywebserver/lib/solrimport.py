@@ -47,7 +47,7 @@ class Importer:
 
         alto = self._mh.get_alto(item)
         if not alto:
-            logger.warning("no alto for pid '%s' " % (pid,))
+            logger.debug("no alto for pid '%s' " % (pid,))
             text = ''
         else:
             text = Conversions.normalize(alto.text)

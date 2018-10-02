@@ -57,6 +57,10 @@ class LinkSolr(LinkBase):
     pass
 
 
+class LinkSolr2(LinkBase):
+    pass
+
+
 class LinkKunstenaars(LinkBase):
     @property
     def url(self):
@@ -78,7 +82,7 @@ class Entities(models.Model):
         # abstract = True
 
 
-LinkNamenlijst = LinkSolr
+LinkNamenlijst = LinkSolr2
 LinkOld = Link
 
 
