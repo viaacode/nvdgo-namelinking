@@ -141,7 +141,7 @@ class Linker:
         return self.__cacher
 
     def get_links(self, names):
-        res = self._solr.search(r'text:"\"%s\""~1' % r'\") (\"'.join(names), rows=100000, fl='id')
+        res = self._solr.search(r'text:"\"%s\""' % r'\") (\"'.join(names), rows=100000, fl='id')
         if not len(res):
             return []
         name = ' '.join(names)

@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from . import models
 from django.db.models import Count
-from lib.previews import get_info, get_media_haven
+from lib.previews import get_info
 from django.http.response import HttpResponse
 from django.http.response import HttpResponseNotFound
 from io import BytesIO
@@ -48,7 +48,7 @@ def pid(request, pid, model=None):
 
     rates = []
     for link in links:
-        rater = Rater(link.pid, link.nmlid, get_media_haven())
+        rater = Rater(link.pid, link.nmlid)
         rates.append(rater.ratings())
     context['links'] = links
     context['rates'] = rates
@@ -75,7 +75,7 @@ def info(request, pid, nmlid, words='', model=None):
         context['status'] = context['Link'].UNDEFINED
         context['url'] = ''
 
-    rater = Rater(pid, nmlid, get_media_haven())
+    rater = Rater(pid, nmlid)
     context['rating'] = rater.ratings()
     return __render(request, 'info.html', context=context)
 

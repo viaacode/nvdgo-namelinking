@@ -4,7 +4,6 @@ from collections import namedtuple, defaultdict
 from itertools import chain
 from pythonmodules.profiling import timeit
 from pythonmodules.namenlijst import Namenlijst
-from pythonmodules.mediahaven import MediaHaven
 from pythonmodules.config import Config
 import logging
 from pysolr import Solr
@@ -53,7 +52,7 @@ class Matcher:
         found = self.find(text)
         results = []
         for m in found:
-            dist = min(list(map(lambda n: min([abs(n - i) for i in self.indices]), m.span())))
+            dist = min(list(map(lambda n: min([abs(n - i) for i in self.indices if i != n]), m.span())))
             results.append(Score(text=text, min_distance=dist, match=m.group(0)))
 
         return results
@@ -84,10 +83,9 @@ class Rater:
                               # died_place_topo=4,
                               )
 
-    def __init__(self, pid, nmlid, mh=None):
+    def __init__(self, pid, nmlid):
         self.pid = pid
         self.nmlid = nmlid
-        self.mh = MediaHaven() if mh is None else mh
         self._language = None
         self._alto = None
         self._details = None
@@ -123,7 +121,7 @@ class Rater:
     @property
     def details(self):
         if self._details is None:
-            with timeit('nml', 250):
+            with timeit('nml', 1000):
                 self._details = Namenlijst().get_person_full(self.nmlid, self.language)
         return self._details
 

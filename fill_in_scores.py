@@ -5,54 +5,65 @@ import psycopg2
 from tqdm import tqdm
 from pythonmodules.profiling import timeit
 from argparse import ArgumentParser
-from pythonmodules.mediahaven import MediaHaven
-from lib.matcher import Rater
-from pythonmodules.cache import LocalCacher
+from pywebserver.lib.matcher import Rater
 import logging
-
-logging.basicConfig()
-
-logger = logging.getLogger()
-fh = logging.FileHandler('fill_in_scores.log')
-fh.setLevel(logging.WARNING)
-logger.addHandler(fh)
+from pythonmodules.multithreading import multithreaded
 
 
 parser = ArgumentParser(description='Add/fill in scores in link tables')
-parser.add_argument('table', help='Origin table')
-parser.add_argument('start', type=int, nargs='?', help='start from')
+parser.add_argument('--start', type=int, nargs='?', help='start from')
+parser.add_argument('--table', help='Origin table', default='attestation_linksolr2')
+parser.add_argument('--limit', type=int, help='limit amount done')
+parser.add_argument('--clear-log-file', default=False, action='store_true', help='Empty the log file first')
+parser.add_argument('--log-file', type=str, default='fill_in_scores.log', help='Set log file name')
 args = parser.parse_args()
+
+if args.clear_log_file:
+    open(args.log_file, 'w').close()
+
+logging.basicConfig()
+logger = logging.getLogger()
+fh = logging.FileHandler(args.log_file)
+fh.setLevel(logging.INFO)
+logger.addHandler(fh)
+
 
 config = Config(section='db')
 conn = psycopg2.connect(config['connection_url'])
+conn2 = psycopg2.connect(config['connection_url'])
 cur = conn.cursor()
-cur2 = conn.cursor()
 with timeit('SELECT', 5000):
-    q = 'select pid, nmlid from %s order by pid' % args.table
+    q = 'SELECT pid, nmlid FROM %s ORDER BY pid' % args.table
+    if args.limit:
+        q += ' LIMIT %d' % int(args.limit)
     if args.start:
-        q += ' offset %d' % int(args.start)
+        q += ' OFFSET %d' % int(args.start)
     cur.execute(q)
 
-mh = MediaHaven()
-mh.set_cacher(LocalCacher(500))
 
-# for idx, row in [[0, ['0000000v8c_19140203_0003', '86b7e9db-0285-475a-bbea-a516fb3a806f']]]:
-for idx, row in enumerate(tqdm(cur, total=cur.rowcount)):
+@multithreaded(10, pre_start=True, pass_thread_id=False)
+def process(row):
     try:
-        rater = Rater(row[0], row[1], mh)
+        rater = Rater(row[0], row[1])
         rating = rater.ratings()
         if rating.total == 0:
-            continue
+            return
         columns = [rating.total]
         columns.extend(row)
+        cur2 = conn2.cursor()
         cur2.execute('UPDATE ' + args.table + ' SET score=%s WHERE pid=%s AND nmlid=%s', columns)
-        conn.commit()
+        cur2.close()
+        conn2.commit()
     except Exception as e:
         logger.warning('exception for %s', row)
         logger.exception(e)
 
+
+process._multithread.pbar = tqdm(total=cur.rowcount)
+process(cur)
+
 conn.commit()
 cur.close()
-cur2.close()
 conn.close()
+conn2.close()
 

@@ -82,12 +82,7 @@ class Entities(models.Model):
         # abstract = True
 
 
-LinkNamenlijst = LinkSolr
+LinkNamenlijst = LinkSolr2
 
 LinkOld = Link
 
-
-class Texts(models.Model):
-    id = models.IntegerField(primary_key=True)
-    pid = models.CharField(max_length=26, db_index=True, default='')
-    text = models.TextField()
