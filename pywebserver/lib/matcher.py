@@ -173,9 +173,11 @@ class Rater:
             values.add(v.replace(b, a))
 
         for v in val:
-            add('ks', 'x')   # koksijde -> koxijde
-            add('aa', 'ae')  # vlAAr -> vlAEr
-            add('c', 'k')    # Corbeek -> Korbeek
+            add('ks', 'x')    # koksijde <-> koxijde
+            add('aa', 'ae')   # vlAAr <-> vlAEr
+            add('c', 'k')     # Corbeek <-> Korbeek
+            add('ghe', 'ge')  # ledeghem <-> ledeGem
+            add('ll', 'lj')   # gefusiLLeerd <-> gefusiLJeerd
             if v in Rater.possiblereplacements:
                 values.update(Rater.possiblereplacements[v])
             if 'shire' in v and len(v) > 8:
@@ -318,9 +320,22 @@ class Rater:
                       lambda: transl(nml.events['work']['work_profession'].strip(' .').lower()),
                       2)
 
+            def victim_type(name):
+                victim_types_to_text = dict(
+                    executed=['executed', 'shot', 'gefusilleerd', 'fusillade', 'geschoten', 'doodgeschoten', 'geexecuteerd',
+                              'gefusiljeerd', 'veroordeeld', 'condamne'],
+
+                )
+                if name in victim_types_to_text:
+                    return victim_types_to_text[name]
+
+                if 'bombardement' in nml.events['died']['death_reason']:
+                    return ['bombardement', 'bombardeerd', 'bombarde', 'bommenwerp']
+
+
             addlookup('victim_type_details',
-                      lambda: nml.victim_type_details,
-                      max_distance=10)
+                      lambda: victim_type(nml.victim_type_details.lower()),
+                      max_distance=50)
 
             for key in ('army', 'sub'):
                 key = 'enlisted_%s' % key
