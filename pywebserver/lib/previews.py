@@ -25,10 +25,12 @@ def get_info(pid, words=None, extra_previews=True):
         return base64.b64encode(data.getvalue()).decode()
 
     mh = get_media_haven()
+    alto = mh.get_alto(pid)
     result = dict(
         pid=pid,
         words=len(words) if words is not None else 0,
-        alto=mh.get_alto(pid).search_words(words),
+        alto=alto.search_words(words),
+        alto_link=alto.url
     )
 
     with mh.get_preview(pid) as im:

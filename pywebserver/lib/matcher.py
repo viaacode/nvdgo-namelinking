@@ -344,7 +344,7 @@ class Rater:
         '''
         total_score = \sum_{}\frac{multiplier}{4\sqrt[5]{score^6}}
         '''
-        total = min(1, sum(scores[k].rating for k in scores))
+        total = min(0.99, sum(scores[k].rating for k in scores))
         if len(scores) == 1:
             total /= 2
         return Rating(scores, total)

@@ -57,7 +57,8 @@
                       {% endwith %}
                   </td> </tr>
                 {% endfor %}
-                <tr><td colspan="2"><div class="json">{{ rates|json }}</div></td></tr>
+                <!-- tr><td colspan="2"><div class="json">{{ rates|json }}</div></td></tr -->
+                <tr> <td>Alto XML</td> <td><a href="{{ alto_link }}" target="_blank">Download</a></td></tr>
                 <tr> <td>Alto</td><td><div class="json">{{ alto | json }}</div></td> </tr>
               </tbody>
             </table>

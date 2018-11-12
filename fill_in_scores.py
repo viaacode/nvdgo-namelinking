@@ -49,15 +49,22 @@ def process(row):
         rater = Rater(row[0], row[1], row[2])
         identifier = row[3]
         cur_rating = row[4]
-        rating = rater.ratings()
-        if cur_rating == rating.total:
+        new_rating = 0
+        try:
+            rating = rater.ratings()
+            new_rating = rating.total
+        except KeyError as e:
+            logger.warning(e)
+
+        if cur_rating == new_rating:
             return
         cur2 = conn2.cursor()
-        cur2.execute('UPDATE ' + args.table + ' SET score = %s WHERE id=%s', [rating.total, identifier])
+        cur2.execute('UPDATE ' + args.table + ' SET score = %s WHERE id=%s', [new_rating, identifier])
         cur2.close()
         conn2.commit()
     except Exception as e:
-        url = 'http://do-tst-mke-01.do.viaa.be/attestation/info/model-namenlijst/%s/%s/%s' % (row[0], row[1], row[2].replace(' ', '/'))
+        url = 'http://do-tst-mke-01.do.viaa.be/attestation/info/model-namenlijst/%s/%s/%s' % \
+              (row[0], row[1], row[2].replace(' ', '/'))
         logger.warning('exception for %s ( %s )', row, url)
         logger.exception(e)
 
