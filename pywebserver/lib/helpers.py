@@ -48,6 +48,10 @@ class AttributeMapper(dict):
 class RowWrapper:
     def __init__(self, obj, wrapper):
         self.obj = obj
+        self.length = None
+        if type(obj) is list:
+            self.length = len(obj)
+            self.obj = iter(self.obj)
         self.wrapper = wrapper
 
     def __iter__(self):
@@ -58,7 +62,9 @@ class RowWrapper:
         return self.wrapper(obj)
 
     def __len__(self):
-        return self.obj.__len__()
+        if self.length is None:
+            return self.obj.__len__()
+        return self.length
 
 
 if __name__ == '__main__':

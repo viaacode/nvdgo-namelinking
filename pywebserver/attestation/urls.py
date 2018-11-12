@@ -4,6 +4,7 @@ from . import views
 from .models import Link
 from jsonrpc.backend.django import api
 from lib import previews
+from lib.dubbels import get_all_for_pid
 from django.forms.models import model_to_dict
 
 urlpatterns = [
@@ -28,7 +29,10 @@ def ping(request=None):
 @api.dispatcher.add_method
 def update_item(model, pid, nmlid, status, kind, extras, request=None):
     model = views.get_model(model)
-    items = model.objects.filter(pid=pid, nmlid=nmlid)
+
+    # update the dubbels as well
+    pids = get_all_for_pid(pid)
+    items = model.objects.filter(pid__in=pids, nmlid=nmlid)
     items.update(status=status, kind=kind, extras=extras)
     return len(items)
 
@@ -48,8 +52,8 @@ def linkmodel_to_dict(model):
 
 
 @api.dispatcher.add_method
-def get_items(amount=1, model=None, request=None):
+def get_items(amount=1, model=None, order_by='?', request=None):
     model = views.get_model(model)
-    links = model.objects.filter(status=model.UNDEFINED).order_by('?')[0:amount]
+    links = model.objects.filter(status=model.UNDEFINED).order_by(order_by)[0:amount]
     return list(map(linkmodel_to_dict, links))
 

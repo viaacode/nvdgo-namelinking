@@ -23,6 +23,7 @@ class LinkBase(models.Model):
     kind = models.CharField(max_length=300, default='')
     extras = models.CharField(max_length=300, default='')
     score = models.FloatField(default=0)
+    meta = models.TextField(null=True)
 
     @property
     def url(self):

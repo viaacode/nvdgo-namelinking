@@ -19,67 +19,110 @@
    <link rel="stylesheet" href="{% static "css/awesomplete.css" %}">
    <script src="{% static "js/awesomplete.js" %}"></script>
    <script src="{% static "js/escaper.js" %}"></script>
+   <script src="{% static "js/renderjson/renderjson.js" %}"></script>
  </head>
  <body>
    <!-- h1><a href="https://hetarchief.be/en/pid/{{ pid|slice:"0:10" }}/{{ pid|slice:"-2:2" }}">{{ pid }}</a></h1>
    <h2>{{ meta.title }}</h2 -->
-   <div id="extra-info-table">
-       <button class="pure-button yellow toggle-button">More info...</button>
-       <table class="pure-table pure-table-striped">
-          <tbody>
-            <tr> <td>Publicatie datum</td> <td>{{ props.carrier_date.0 }}</td> </tr>
-            <tr> <td>Titel</td> <td>{{ meta.title }}</td> </tr>
-            <tr> <td>mediaObjectId</td> <td>{{ meta.mediaObjectId }}</td> </tr>
-            <tr> <td>hetarchief</td> <td><a href="https://hetarchief.be/en/pid/{{ pid|slice:"0:10" }}/{{ pid|slice:"-2:2" }}" target="_blank">
-              https://hetarchief.be/en/pid/{{ pid|slice:"0:10" }}/{{ pid|slice:"-2:2" }}
-            </a></td> </tr>
-            <tr> <td> namenlijst</td> <td><a href="https://database.namenlijst.be/#/person/_id={{ nmlid }}" target="_blank">https://database.namenlijst.be/publicsearch/#/person/_id={{ nmlid }}</a></td></tr>
-            <tr> <td>OCR</td><td>{{ meta.description | highlight_words:entity | linebreaks }}</td> </tr>
 
-            <tr><td colspan="2"><pre>{{ rating|json }}</pre></td></tr>
-            <tr> <td></td> <td></td> </tr>
-          </tbody>
-        </table>
-    </div>
+    <div class="pure-g">
+        <div id="previews" class="pure-u-1-2 simple">
+          <div class="image-container"></div>
+           <img src="{% static "img/left.svg" %}" class="prev" />
+           <img src="{% static "img/right.svg" %}" class="next" />
+           <div class="footer-info">
+              <div class="pure-g">
+                  <div class="pure-u-1-3 links">
+                      <div class="pure-menu pure-menu-horizontal">
+                        <ul class="pure-menu-list">
+                          <li class="pure-menu-item">&nbsp;</li>
+                          <li class="pure-menu-item"><a href="{% url 'pid' pid=pid model=model %}" title="Meer entities op dit artikel" target="_blank"><i class="fas fa-angle-double-up"></i> </a></li>
+                          <li class="pure-menu-item"><a href="https://hetarchief.be/en/pid/{{ pid|slice:"0:10" }}/{{ pid|slice:"-4:"|add:"0" }}" target="_blank" title="Open artikel op hetarchief.be" ><img src="{% static "img/archief-logo.png" %}" alt="" /></a></li>
 
-    <div id="previews">
-      <div class="image-container"></div>
-       <img src="{% static "img/left.svg" %}" class="prev" />
-       <img src="{% static "img/right.svg" %}" class="next" />
-       <div class="footer-info">
-          <div class="pure-g">
-              <div class="pure-u-1-3 links">
-                  <div class="pure-menu pure-menu-horizontal">
-                    <ul class="pure-menu-list">
-                      <li class="pure-menu-item">&nbsp;</li>
-                      <li class="pure-menu-item"><a href="{% url 'pid' pid=pid model=model %}" title="Meer entities op dit artikel" target="_blank"><i class="fas fa-angle-double-up"></i> </a></li>
-                      <li class="pure-menu-item"><a href="https://hetarchief.be/en/pid/{{ pid|slice:"0:10" }}/{{ pid|slice:"-4:"|add:"0" }}" target="_blank" title="Open artikel op hetarchief.be" ><img src="{% static "img/archief-logo.png" %}" alt="" /></a></li>
+                          <li class="pure-menu-item"><a href="{{ url }}" title="Open in bron" target="_blank">
 
-                      <li class="pure-menu-item"><a href="{{ url }}" title="Open in bron" target="_blank">
+                          {% with "img/"|add:model|add:"-logo.png" as logo %}
+                              <img src="{% static logo %}" alt="" />
+                          {% endwith %}
+                          </a></li>
 
-                      {% with "img/"|add:model|add:"-logo.png" as logo %}
-                          <img src="{% static logo %}" alt="" />
-                      {% endwith %}
-                      </a></li>
-
-                      <li class="pure-menu-item entity">{{ entity }} ({{ props.carrier_date.0 }})</li>
-                    </ul>
+                          <li class="pure-menu-item entity">{{ entity }} ({{ props.carrier_date.0 }})</li>
+                        </ul>
+                      </div>
+                  </div>
+                  <div class="pure-u-1-3 pages">
+                       <span class="current"></span>/<span class="total"></span>
+                  </div>
+                  <div class="pure-u-1-3 buttons">
+                     <div class="pure-button-group" role="group" aria-label="Status">
+                        <button title="Geconfirmeerde match" value="{{ Link.MATCH }}" class="pure-button green{% if status == Link.MATCH %} active{% endif %}">✔</button>
+                        <button title="Onzeker, mogelijke match" value="{{ Link.UNCERTAIN }}" class="pure-button yellow{% if status == Link.UNCERTAIN %} active{% endif %}">?</button>
+                        <button title="Geen match" value="{{ Link.NO_MATCH }}" class="pure-button red{% if status == Link.NO_MATCH %} active{% endif %}">×</button>
+                        <button title="Overslaan" value="" class="pure-button">⧐</button>
+                     </div>
                   </div>
               </div>
-              <div class="pure-u-1-3 pages">
-                   <span class="current"></span>/<span class="total"></span>
-              </div>
-              <div class="pure-u-1-3 buttons">
-                 <div class="pure-button-group" role="group" aria-label="Status">
-                    <button title="Geconfirmeerde match" value="{{ Link.MATCH }}" class="pure-button green{% if status == Link.MATCH %} active{% endif %}">✔</button>
-                    <button title="Onzeker, mogelijke match" value="{{ Link.UNCERTAIN }}" class="pure-button yellow{% if status == Link.UNCERTAIN %} active{% endif %}">?</button>
-                    <button title="Geen match" value="{{ Link.NO_MATCH }}" class="pure-button red{% if status == Link.NO_MATCH %} active{% endif %}">×</button>
-                    <button title="Overslaan" value="" class="pure-button">⧐</button>
-                 </div>
-              </div>
-          </div>
-       </div>
-    </div>
+           </div>
+        </div>
+
+       <div id="extra-info-table" class="pure-u-1-2">
+           <!-- button class="pure-button yellow toggle-button">More info...</button -->
+           <table class="pure-table pure-table-striped">
+              <tbody>
+                <tr> <td>Publicatie datum</td> <td>{{ props.carrier_date.0 }}</td> </tr>
+                <tr> <td>Titel</td> <td>{{ meta.title }}</td> </tr>
+                <tr> <td>mediaObjectId</td> <td>{{ meta.mediaObjectId }}</td> </tr>
+                <tr> <td>hetarchief</td> <td><a href="https://hetarchief.be/en/pid/{{ pid|slice:"0:10" }}/{{ pid|slice:"-2:2" }}" target="_blank">
+                  https://hetarchief.be/en/pid/{{ pid|slice:"0:10" }}/{{ pid|slice:"-2:2" }}
+                </a></td> </tr>
+                <tr> <td> namenlijst</td> <td><a href="https://database.namenlijst.be/#/person/_id={{ nmlid }}" target="_blank">https://database.namenlijst.be/publicsearch/#/person/_id={{ nmlid }}</a></td></tr>
+
+                <tr> <td>OCR</td><td><p>{{ meta.description | highlight_words:entity | linebreaksbr }}</p></td> </tr>
+                <tr> <td>Duplicate pids</td> <td>{{ pids }}</td> </tr>
+                <tr> <td>Matching score</td> <td><div class="quality" style="--quality: {{ link.score }};" title="Score: {{ link.score }}"></div> {{ score|pct }}</td> </tr>
+                <tr> <td>Description</td> <td>{{ person.summary }}</td> </tr>
+                <tr> <td>Full PID</td> <td>{{ pid }}</td> </tr>
+
+                <tr><td colspan="2">
+                    <h5>Rating details</h5>
+                    <h6>Rating</h6>
+                    <pre>
+                        {{ rating|linebreaksbr }}
+                    </pre>
+                    <div class="json">{{ rating|json }}</div>
+                    <h6>Lookups</h6>
+                    <pre>
+                        {{ lookups|linebreaksbr }}
+                    </pre>
+                    <div class="json">{{ lookups|json }}</div>
+                </td></tr>
+                <tr><td colspan="2">
+                    <h5>
+                        <div class="quality" style="--quality: {{ link.score }}" title="Score: {{ link.score }}"></div>
+                        Namenlijst person (full)
+
+                        Complete:
+                        <div class="quality" style="--quality: 0.0"></div>
+                        <div class="quality" style="--quality: 0.2"></div>
+                        <div class="quality" style="--quality: 0.4"></div>
+                        <div class="quality" style="--quality: 0.6"></div>
+                        <div class="quality" style="--quality: 0.8"></div>
+                        <div class="quality" style="--quality: 1.0"></div>
+
+                    </h5>
+                    <div class="json">{{ person|json }}</div>
+                    ALTO
+                    <div class="json">{{ alto|json }}</div>
+                </td></tr>
+                {% comment %}
+                <tr> <td>Debug</td> <td> <pre>{% debug %} </pre></td> </tr>
+                {% endcomment %}
+                <tr> <td></td> <td></td> </tr>
+              </tbody>
+            </table>
+        </div>
+
+     </div>
 
 
    {% if preview %}<img class="pure-img preview alto-image" src="data:image/jpg;base64,{{ preview }}" alt="{{ pid }}" title="{{ meta.title }}" data-alto="{{ alto | json:"auto_escape=True" }}">{% endif %}
@@ -135,6 +178,13 @@
    <script>
     // d3.selectAll('img.alto-image').call(alto);
      $(function () {
+         renderjson.set_icons('▸', '▾');
+         renderjson.set_show_to_level(2);
+         $('.json').each(function() {
+            var $this = $(this);
+            $this.html(renderjson(JSON.parse($this.text())));
+         });
+
          var ih = 0,
              $previews = $('#previews');
 
@@ -187,14 +237,14 @@
          //initially show image
          showImage();
         var get_url_archief = function (d) {
-          return '/attestation/info/model-{{ model }}/' + d['pid'] + '/' + d['nmlid'] + '/' + d['entity'].replace(/\s+/, '/');
+          return '/attestation/info/model-{{ model }}/' + d['pid'] + '/' + d['nmlid'] + '/' + d['entity'].replace(/\s+/g, '/');
         };
 
         var nextItem = function() {
           if (window.parent !== window && typeof(window.parent.nextItem) === 'function') {
             return window.parent.nextItem(1);
           }
-          jsonrpc('get_items', { amount: 1, model: '{{ model }}' }).then(function (data) {
+          jsonrpc('get_items', { amount: 1, model: '{{ model }}', order_by: '-score' }).then(function (data) {
             data = data.result[0];
             window.location = get_url_archief(data);
           });

@@ -6,6 +6,9 @@ from django.http.response import HttpResponse
 from django.http.response import HttpResponseNotFound
 from io import BytesIO
 from lib.matcher import Rater
+from lib.dubbels import get_all_for_pid
+from django.http import Http404
+
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -48,7 +51,7 @@ def pid(request, pid, model=None):
 
     rates = []
     for link in links:
-        rater = Rater(link.pid, link.nmlid)
+        rater = Rater(link.pid, link.nmlid, link.entity)
         rates.append(rater.ratings())
     context['links'] = links
     context['rates'] = rates
@@ -66,17 +69,21 @@ def info(request, pid, nmlid, words='', model=None):
     context['Link'] = get_model(model)
     context['entity'] = ' '.join(words)
     obj = context['Link'].objects.filter(nmlid=nmlid, pid=pid).first()
-    if obj:
-        context['status'] = obj.status
-        context['kind'] = obj.kind
-        context['extras'] = obj.extras
-        context['url'] = obj.url
-    else:
-        context['status'] = context['Link'].UNDEFINED
-        context['url'] = ''
+    if obj is None:
+        raise Http404("Link not found in database")
 
-    rater = Rater(pid, nmlid)
+    context['status'] = obj.status
+    context['kind'] = obj.kind
+    context['extras'] = obj.extras
+    context['url'] = obj.url
+    context['score'] = obj.score
+
+    context['link'] = obj
+    rater = Rater(pid, nmlid, obj.entity)
+    context['lookups'] = rater.lookups
     context['rating'] = rater.ratings()
+    context['person'] = rater.details
+    context['pids'] = get_all_for_pid(pid, include_self=False)
     return __render(request, 'info.html', context=context)
 
 

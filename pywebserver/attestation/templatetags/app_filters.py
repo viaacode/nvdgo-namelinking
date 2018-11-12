@@ -3,6 +3,7 @@ from django.utils.html import conditional_escape
 from django import template
 import json
 import re
+from collections import OrderedDict, namedtuple
 
 from xml.etree import ElementTree
 import datetime
@@ -13,8 +14,56 @@ logger = logging.getLogger('pythonmodules.previews')
 register = template.Library()
 
 
+def _serialize_new(obj):
+    """JSON serializer for objects not serializable by default json code"""
+    if obj is None:
+        return obj
+
+    if type(obj) in [str, int, float, bool]:
+        return obj
+
+    if type(obj) is set:
+        obj = list(obj)
+
+    if isinstance(obj, (datetime.time, datetime.date)):
+        return obj.isoformat()
+
+    if hasattr(obj, '_asdict'):
+        obj = obj._asdict()
+
+    if isinstance(obj, ElementTree.Element):
+        return _serialize(obj.attrib)
+
+    if isinstance(obj, dict):
+        # return obj
+        return OrderedDict([(k, _serialize(v)) for k, v in obj.items()])
+
+    # try:
+    #     obj = dict(obj)
+    # except TypeError:
+    #     print('typerr')
+    #     pass
+    # except ValueError:
+    #     print('valerr')
+    #     pass
+
+    if hasattr(obj, '__iter__'):
+        return list(map(_serialize, obj))
+
+    return obj
+
+
 def _serialize(obj):
     """JSON serializer for objects not serializable by default json code"""
+    if obj is None:
+        return obj
+
+    if type(obj) in [str, int, float, bool]:
+        return obj
+
+    if type(obj) is set:
+        obj = list(obj)
+
     if isinstance(obj, datetime.date):
         serial = obj.isoformat()
         return serial
@@ -24,13 +73,26 @@ def _serialize(obj):
         return serial
 
     if isinstance(obj, ElementTree.Element):
-        serial = obj.attrib
-        return serial
+        return _serialize(obj.attrib)
 
-    if hasattr(obj, '__dict__'):
-        return obj.__dict__
+    if hasattr(obj, '_asdict'):
+        obj = obj._asdict()
 
-    return obj.__repr__()
+    if isinstance(obj, (OrderedDict, dict)):
+        # return obj
+        return OrderedDict([(k, _serialize(v)) for k, v in obj.items()])
+
+    try:
+        obj = dict(obj)
+    except TypeError:
+        pass
+    except ValueError:
+        pass
+
+    if hasattr(obj, '__iter__'):
+        return list(map(_serialize, obj))
+
+    return obj.__str__()
 
 
 @register.filter(needs_autoescape=True)
@@ -59,7 +121,12 @@ def highlight_words(text, words, autoescape=True, case_insensitive=True):
 
 @register.filter(name='json')
 def json_(obj, autoescape=False, serializer=_serialize):
-    obj = json.dumps(obj, default=serializer, indent=4)
+    try:
+        obj = serializer(obj)
+    except TypeError as e:
+        logger.warning(e)
+        pass
+    obj = json.dumps(obj, default=serializer, indent=4, sort_keys=True)
     if autoescape:
         obj = conditional_escape(obj)
     return mark_safe(obj)
@@ -69,3 +136,13 @@ def json_(obj, autoescape=False, serializer=_serialize):
 def replace_(txt: str, args: str):
     search, replace = args.split(':', 1)
     return txt.replace(search, replace)
+
+
+@register.filter(name='pct')
+def pct(txt: float):
+    return '%3.1f%%' % (txt * 100)
+
+
+@register.filter(name='times')
+def times(txt: str, amount: float):
+    return str(txt*amount)

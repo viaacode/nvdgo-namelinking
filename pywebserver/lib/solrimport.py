@@ -97,13 +97,13 @@ class BulkImporter(Importer):
         idx, new_item = item
         super().process(new_item, *args, **kwargs)
 
-    def start(self, start_from=None):
+    def start(self, start_from=None, extra_search=''):
         if start_from is None:
             start_from = 0
 
         self.progress = tqdm(initial=start_from)
         with self.timeit('MH Search'):
-            data = self._mh.search('+(workflow:GMS) +(archiveStatus:on_tape)', start_from)
+            data = self._mh.search('+(workflow:GMS) +(archiveStatus:on_tape) %s' % extra_search, start_from)
             total = len(data)
 
         self.progress.total = total

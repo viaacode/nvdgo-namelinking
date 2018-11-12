@@ -1,3 +1,6 @@
 [submodule "pythonmodules"]
 	path = pythonmodules
 	url = https://github.com/viaacode/python-modules.git
+[submodule "pywebserver/attestation/static/js/renderjson"]
+	path = pywebserver/attestation/static/js/renderjson
+	url = https://github.com/caldwell/renderjson.git

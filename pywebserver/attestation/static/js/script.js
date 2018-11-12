@@ -1,5 +1,5 @@
 var get_url_archief = function (d) {
-  return '/attestation/info/model-' + window.model + '/' + d['pid'] + '/' + d['nmlid'] + '/' + d['entity'].replace(/\s+/, '/');
+  return '/attestation/info/model-' + window.model + '/' + d['pid'] + '/' + d['nmlid'] + '/' + d['entity'].replace(/\s+/g, '/');
 };
 
 var get_url_link = function (d) {
@@ -18,7 +18,7 @@ var preloads = [
         d3.select('iframe#attestation2')
     ];
 
-var link = d3.select('iframe#link_url');
+//var link = d3.select('iframe#link_url');
 var nextData = null;
 var buffer = [];
 
@@ -27,8 +27,8 @@ window.nextItem = function () {
     if (nextData === null) {
       amount = 5;
     }
-    jsonrpc('get_items', { amount: amount, model: window.model }).then(function (data) {
-      link.attr('src', emptySrc);
+    jsonrpc('get_items', { amount: amount, model: window.model, order_by: '-score' }).then(function (data) {
+//      link.attr('src', emptySrc);
       data = data.result
 
       Array.prototype.push.apply(buffer, data);
@@ -43,7 +43,7 @@ window.nextItem = function () {
 
       nextData = buffer.shift();
       preloads[i].attr('src', emptySrc);
-      link.attr('src', curData['url']);
+//      link.attr('src', curData['url']);
 
       preloads[i].classed('inactive', true);
       preloads[notI].classed('inactive', false);

@@ -3,6 +3,7 @@
 from pythonmodules.profiling import timeit
 import logging
 from lib.linker import Linker, Datasources, AttributeMapper
+from tqdm import tqdm
 
 
 def run(*args):
@@ -26,6 +27,9 @@ def run(*args):
 
     if 'no-skips' in args:
         logger.info('will not skip frequent names')
+
+    if 'only-skips' in args:
+        logger.info('will only check frequent names')
 
     if 'no-write' in args:
         logger.info('don\'t write results to db')
@@ -58,13 +62,26 @@ def run(*args):
     if len(args) and args[0].isdigit():
         logger.warning('will skip %s', args[0])
         extra_kwargs['skip'] = int(args[0])
-    people = datasource['func'](document=document, options=options, **extra_kwargs)
 
     linking = Linker(8 if 'consecutive' not in args else 1,
                      counts_only='counts' in args,
                      no_skips='no-skips' in args,
                      no_write='no-write' in args,
-                     table=datasource['table'] if 'table' in datasource else None)
+                     table=datasource['table'] if 'table' in datasource else None,
+                     only_skips='only-skips' in args)
+
+    if linking.preset_list:
+        def mapper(id):
+            document['_id'] = id
+            return datasource['func'](document=document, options=options, **extra_kwargs)
+
+        l = len(linking.preset_list)
+        people = datasource['func'](results=list(tqdm(map(mapper, linking.preset_list), total=l)))
+        linking.length = l
+        # document['_id'] = list(linking.preset_list)
+        # people = datasource['func'](document=document, options=options, **extra_kwargs)
+    else:
+        people = datasource['func'](document=document, options=options, **extra_kwargs)
 
     if 'debug-sql' in args:
         logger.info('will show some sql debug info')

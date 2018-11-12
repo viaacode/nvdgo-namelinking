@@ -69,6 +69,11 @@ body {
   overflow-y: scroll;
 }
 #extra-info-table {
+  overflow-y: scroll;
+  height: 100vh;
+  max-width: 50%;
+}
+#extra-info-table2 {
   position: fixed;
   top: 0;
   left: auto;
@@ -80,15 +85,15 @@ body {
   overflow: hidden;
   transition: height 0.15s ease-out;
 }
-#extra-info-table .toggle-button {
+#extra-info-table2 .toggle-button {
   display: block;
   width: 200px;
   height: 50px;
 }
-#extra-info-table table {
+#extra-info-table2 table {
   display: none;
 }
-#extra-info-table:hover {
+#extra-info-table2:hover {
   height: 90%;
   width: 100%;
   overflow: scroll;
@@ -96,11 +101,11 @@ body {
   transition: height 0.25s ease-in;
   background-color: #cbcbcb;
 }
-#extra-info-table:hover table {
+#extra-info-table2:hover table {
   display: table;
   background-color: white;
 }
-#extra-info-table:hover .toggle-button {
+#extra-info-table2:hover .toggle-button {
   display: none;
 }
 table.pure-table tbody tr td p {
@@ -175,4 +180,83 @@ table.pure-table.pure-table-odd tbody tr td p {
 }
 .link-status .undefined:after {
   content: '';
+}
+.pure-u-1-2 .json .renderjson {
+  max-width: 45vw;
+}
+.json {
+  background: #303030;
+  color: #f2f2f2;
+  max-width: 100%;
+}
+.json .renderjson {
+  max-width: 100%;
+  padding: 0;
+  margin: 0;
+  overflow: auto;
+  text-shadow: none;
+  width: 100%;
+}
+.json .renderjson a {
+  text-decoration: none;
+  color: lime;
+}
+.json .renderjson .disclosure {
+  color: crimson;
+  vertical-align: middle;
+}
+.json .renderjson .syntax {
+  color: grey;
+}
+.json .renderjson .string {
+  color: red;
+}
+.json .renderjson .number {
+  color: cyan;
+}
+.json .renderjson .boolean {
+  color: plum;
+}
+.json .renderjson .key {
+  color: lightblue;
+}
+.json .renderjson .keyword {
+  color: lightgoldenrodyellow;
+}
+.json .renderjson .object.syntax {
+  color: lightseagreen;
+}
+.json .renderjson .array.syntax {
+  color: lightsalmon;
+}
+.quality {
+  display: inline-block;
+  position: relative;
+  width: 10px;
+  height: 1em;
+  border: 1px solid black;
+}
+.quality:before {
+  display: block;
+  content: "";
+  background: green;
+  width: 100%;
+  height: 100%;
+  background-color: hsla(calc(-10 + (var(--quality) * 120)), 50%, 50%, 0.2);
+  max-height: 100%;
+  bottom: 0;
+  position: absolute;
+  vertical-align: bottom;
+}
+.quality:after {
+  display: block;
+  content: "";
+  background: green;
+  width: 100%;
+  height: calc(var(--quality) * 100%);
+  background-color: hsl(calc(-10 + (var(--quality) * 120)), 50%, 50%);
+  max-height: 100%;
+  bottom: 0;
+  position: absolute;
+  vertical-align: bottom;
 }

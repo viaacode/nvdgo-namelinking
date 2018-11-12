@@ -17,6 +17,7 @@
    <link rel="stylesheet" href="{% static "css/awesomplete.css" %}">
    <script src="{% static "js/awesomplete.js" %}"></script>
    <script src="{% static "js/escaper.js" %}"></script>
+   <script src="{% static "js/renderjson/renderjson.js" %}"></script>
  </head>
  <body>
 
@@ -38,25 +39,26 @@
 
 
                 </a></td> </tr>
-                <tr> <td>OCR</td><td>{{ meta.description | linebreaks }}</td> </tr>
-                {% comment %}
-                <tr> <td>Alto</td><td>{{ alto | json | linebreaks }}</td> </tr>
-                {% endcomment %}
+                <tr> <td>OCR</td><td><p>{{ meta.description | linebreaksbr }}</p></td> </tr>
                 <tr> <th>Entity</th> <th>Corresponding id</th> </tr>
                 {% for link in links %}
                 <tr class="entity" data-entity="{{ link.entity }}">
-                  <td>{{ link.entity }} </td>
                   <td>
+                      {{ link.entity }}
+                  </td>
+                  <td>
+                      <div class="quality" style="--quality: {{ link.score }};" title="Score: {{ link.score }}"></div>
                       {% with "img/"|add:model|add:"-logo.png" as logo %}
                           <a href="{{ link.url }}" target="_blank" title="Open in {{ model }}"><img src="{% static logo %}" alt="" style="height: 16px" /></a>
                       {% endwith %}
                       {% with link.entity|replace:" :/" as namepart %}
-                      <a href="{% url 'info' model=model pid=link.pid nmlid=link.nmlid words=namepart %}" title="Open in attestation">{{ link.nmlid }}</a>
-                             <i class="link-status {{ link.status_class }}" title="{{ link.status_text }}">({{ link.status_text }})</i>
+                          <a href="{% url 'info' model=model pid=link.pid nmlid=link.nmlid words=namepart %}" title="Open in attestation">{{ link.nmlid }}</a>
+                          <i class="link-status {{ link.status_class }}" title="{{ link.status_text }}">({{ link.status_text }})</i>
                       {% endwith %}
                   </td> </tr>
                 {% endfor %}
-                <tr><td colspan="2"><pre>{{ rates|json }}</pre></td></tr>
+                <tr><td colspan="2"><div class="json">{{ rates|json }}</div></td></tr>
+                <tr> <td>Alto</td><td><div class="json">{{ alto | json }}</div></td> </tr>
               </tbody>
             </table>
         </div>
@@ -71,6 +73,14 @@
    <script src="{% static "js/jsonrpc.js" %}"></script>
    <script>
      $(function () {
+
+         renderjson.set_icons('▸', '▾');
+         renderjson.set_show_to_level(3);
+         $('.json').each(function() {
+            var $this = $(this);
+            $this.html(renderjson(JSON.parse($this.text())));
+         });
+
          var ih = 0,
              $previews = $('#previews');
 

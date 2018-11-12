@@ -12,6 +12,7 @@ parser.add_argument('--continue-from', help='Continue from row CONTINUE_FROM')
 parser.add_argument('--debug', action='store_true', help='Show debug info')
 parser.add_argument('--continue', action='store_true', dest='continue_', help='Continue (based on count in solr)')
 parser.add_argument('--log-file', default=False, help='Write logs to a file')
+parser.add_argument('--pid', help='Only import this specific PID')
 args = parser.parse_args()
 
 log_level = logging.DEBUG if args.debug else logging.WARNING
@@ -47,6 +48,11 @@ else:
 if start:
     logger.info('Continuing from %d', start)
 
+
+extra_search = ''
+if args.pid:
+    extra_search = ' +(externalId:%s)' % args.pid
+
 importer = BulkImporter(50)
-importer.start(start)
+importer.start(start, extra_search)
 

@@ -30,7 +30,8 @@ def namenlijst(**kwargs):
     # def wrap(n):
     #    return AttributeMapper(n, dict(firstname='surname', lastname='familyname'))
     wrap = lambda k: AttributeMapper(k, dict(firstname='surname', lastname='familyname'))
-    return RowWrapper(Namenlijst().findPerson(**kwargs), wrap)
+    results = Namenlijst().findPerson(**kwargs)
+    return RowWrapper(results, wrap)
 
 
 def kunstenaars(**kwargs):
@@ -62,8 +63,10 @@ class Linker:
     to_skip = []
 
     def __init__(self, num_worker_threads=10, counts_only=False, no_skips=False, no_write=False, categorizer=None,
-                 table=None):
+                 table=None, only_skips=False):
         self.bar = None
+        self.length = None
+        self.preset_list = None
         self.categorizer = categorizer if categorizer is not None else 'victim_type'
         self.__cacher = LocalCacher(200)
         self.log = logging.getLogger(__name__)
@@ -82,8 +85,13 @@ class Linker:
 
         if not no_skips:
             self.to_skip = set(models.Link.objects.filter(status=models.Link.SKIP)
-                                           .order_by('nmlid').values_list('nmlid', flat=True)
-                                           .distinct())
+                                          .order_by('nmlid').values_list('nmlid', flat=True)
+                                          .distinct())
+
+        if only_skips:
+            self.preset_list = set(models.Link.objects.filter(status=models.Link.SKIP)
+                                         .order_by('nmlid').values_list('nmlid', flat=True)
+                                         .distinct())
 
         # quick hack to write skips to csv
         #
@@ -115,7 +123,7 @@ class Linker:
             t.start()
 
     def start(self, df, initial=0):
-        self.bar = tqdm(total=len(df), initial=initial)
+        self.bar = tqdm(total=len(df) if self.length is None else self.length, initial=initial)
         for row in enumerate(df):
             self.q.put(row)
         self.q.join()
@@ -123,7 +131,8 @@ class Linker:
     def process(self, res, row, idx):
         nmlid = row['_id']
         values = (self.link(nmlid=nmlid, pid=r[0].strip(), entity=' '.join(r[1:])) for r in res)
-        self.link.objects.bulk_create(values)
+        if not self.no_write:
+            self.link.objects.bulk_create(values)
         return
 
     @staticmethod
@@ -233,6 +242,7 @@ class Linker:
             return set()
 
     def work(self, idx, row):
+        self.log.debug(row)
         if row[self.categorizer] not in self.counts:
             self.counts[row[self.categorizer]] = dict(skipped=0, ok=0, alternatives=0, found=0, skipped_too_freq=0)
 
@@ -260,7 +270,7 @@ class Linker:
         # remove single letter words such as 't' for eg. "edmond t kint de roodenbeke"
         # lastnames = set(' '.join((l for l in lastname.split(' ') if len(l) > 1)) for lastname in lastnames)
 
-        if len(names.firstnames_normalized) == 0 or len(names.lastnames_normalized) == 0:
+        if len(names.firstnames_normalized) <= 1 or len(names.lastnames_normalized) <= 1:
             self.counts[row[self.categorizer]]['skipped'] += 1
         else:
             self.counts[row[self.categorizer]]['ok'] += 1

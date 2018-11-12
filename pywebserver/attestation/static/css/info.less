@@ -75,7 +75,13 @@ body {
 	max-height: 100%;
 	overflow-y: scroll;
 }
+
 #extra-info-table {
+    overflow-y: scroll;
+    height: 100vh;
+    max-width: 50%;
+}
+#extra-info-table2 {
 	position: fixed;
 	top: 0;
 	left: auto;
@@ -223,4 +229,70 @@ table.pure-table.pure-table-odd {
     .undefined:after {
         content: ''
     }
+}
+
+.pure-u-1-2 {
+    .json {
+        .renderjson {
+            max-width: 45vw;
+        }
+    }
+}
+
+.json {
+    background: #303030;
+    color: #f2f2f2;
+    max-width: 100%;
+
+    .renderjson {
+        max-width: 100%;
+        padding: 0;
+        margin: 0;
+        overflow: auto;
+        text-shadow: none;
+        width: 100%;
+        a              { text-decoration: none; color: lime; }
+        .disclosure    { color: crimson; vertical-align: middle; }
+        .syntax        { color: grey; }
+        .string        { color: red; }
+        .number        { color: cyan; }
+        .boolean       { color: plum; }
+        .key           { color: lightblue; }
+        .keyword       { color: lightgoldenrodyellow; }
+        .object.syntax { color: lightseagreen; }
+        .array.syntax  { color: lightsalmon; }
+    }
+}
+
+.quality {
+  display: inline-block;
+  position: relative;
+  width: 10px;
+  height: 1em;
+  border: 1px solid black;
+
+  &:before {
+    display: block;
+    content: "";
+    background: green;
+    width: 100%;
+    height: 100%;
+    background-color: hsla(calc(-10 + (var(--quality) * 120)), 50%, 50%, .2);
+    max-height: 100%;
+    bottom: 0;
+    position: absolute;
+    vertical-align: bottom;
+  }
+  &:after {
+    display: block;
+    content: "";
+    background: green;
+    width: 100%;
+    height: calc(var(--quality) * 100%);
+    background-color: hsl(calc(-10 + (var(--quality) * 120)), 50%, 50%);
+    max-height: 100%;
+    bottom: 0;
+    position: absolute;
+    vertical-align: bottom;
+  }
 }

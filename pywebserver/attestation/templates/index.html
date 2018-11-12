@@ -3,7 +3,7 @@
 <html lang="en">
  <head>
    <meta charset="utf-8">
-   <title>NER Attestation Tool</title>
+   <title>Attestation Tool</title>
    <link rel="stylesheet" href="https://unpkg.com/purecss@1.0.0/build/pure-min.css" integrity="sha384-nn4HPE8lTHyVtfCBi5yW9d20FjT8BJwUXyWZT9InLYax14RDjBj46LmSztkmNP9w" crossorigin="anonymous">
    <link rel="stylesheet" href="{% static "css/style.css" %}">
    <link rel="stylesheet" href="{% static "css/awesomplete.css" %}">
@@ -18,11 +18,11 @@
  </head>
  <body>
    <div class="pure-g iframes">
-     <div class="pure-u-2-3">
+     <div class="pure-u-1-1">
        <iframe src="{% url 'loading' %}" id="attestation2" name="archief"></iframe>
        <iframe src="{% url 'loading' %}" id="attestation1" name="archief"></iframe>
      </div>
-     <div class="pure-u-1-3"><iframe src="{% url 'loading' %}" id="link_url" name="link_url"></iframe></div>
+     <!--<div class="pure-u-1-3"><iframe src="{% url 'loading' %}" id="link_url" name="link_url"></iframe></div>-->
    </div>
    <script src="{% static "js/script.js" %}"></script>
 </body>
