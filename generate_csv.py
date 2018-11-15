@@ -7,6 +7,7 @@ from pythonmodules.profiling import timeit
 from argparse import ArgumentParser
 from pythonmodules.namenlijst import Namenlijst
 from pythonmodules.mediahaven import MediaHaven
+from pythonmodules.multithreading import multithreaded
 import logging
 import csv
 import sys
@@ -20,6 +21,7 @@ parser.add_argument('--limit', type=int, help='limit amount done')
 parser.add_argument('--clear-log-file', default=False, action='store_true', help='Empty the log file first')
 parser.add_argument('--log-file', type=str, default='generate_csv.log', help='Set log file name')
 parser.add_argument('--csv', type=str, help='The csv to write te results to, if not given will output to stdout')
+parser.add_argument('--where', type=str, default=None, help='Extra conditions')
 parser.add_argument('--debug', default=False, action='store_true')
 
 args = parser.parse_args()
@@ -41,11 +43,19 @@ if args.debug:
 csv_file = sys.stdout if args.csv is None else open(args.csv, 'w')
 
 
+where = ''
+if args.where:
+    where = 'AND %s ' % (args.where,)
+
 config = Config(section='db')
 conn = psycopg2.connect(config['connection_url'])
 cur = conn.cursor()
+
 with timeit('SELECT', 5000):
-    q = "SELECT id, pid, nmlid, entity, score, status, meta FROM %s WHERE status != 2 ORDER BY pid ASC " % args.table
+    q = "SELECT id, pid, nmlid, entity, score, status, meta " \
+        "FROM %s " \
+        "WHERE status != 2 %s " \
+        "ORDER BY pid ASC " % (args.table, where)
     if args.limit:
         q += ' LIMIT %d' % int(args.limit)
     if args.start:
@@ -57,24 +67,31 @@ writer = csv.writer(csv_file)
 writer.writerow(headers)
 nl = Namenlijst()
 mh = MediaHaven()
-cur_write = conn.cursor()
 
 i = 0
 
-for row in tqdm(cur, total=cur.rowcount):
+
+@multithreaded(10, pre_start=True, pass_thread_id=False)
+def process(row):
+    global i, conn, cur_write
     try:
         id, full_pid, external_id, entity, score, status, meta = row
+        attestation_id = 'namenlijst/%s/%s/%s' % (full_pid, external_id, entity.replace(' ', '/'))
         pid, pid_date, page = full_pid.split('_', 2)
         page = int(page)
-        if score > 0.99 or status == 1:
+        if score > 0.99:
             score = 0.99
-
         if meta is not None:
             meta = json.loads(meta)
             full_name = meta['name']
         else:
+            logger.info('Generate meta data for %s', attestation_id)
             person = nl.get_person_full(external_id)
             full_name = person.names.name
+            extra = dict()
+            extra['country'] = person.born_place['country_code'].upper()
+            extra['died_age'] = person.died_age
+
             subtitle = []
 
             if person.born_date is not None:
@@ -112,14 +129,17 @@ for row in tqdm(cur, total=cur.rowcount):
                 "zoom": extent_textblock,
                 "highlight": extents_highlight,
                 "full_pid": full_pid,
-                "attestation_id": 'namenlijst/%s/%s/%s' % (full_pid, external_id, entity.replace(' ', '/'))
+                "attestation_id": attestation_id,
+                "coords_correctionfactor": search_res['correction_factor'],
+                "extra": extra
             }
 
             meta = json.dumps(meta)
 
+            cur_write = conn.cursor()
             cur_write.execute('UPDATE %s SET meta = %%s WHERE id=%%s' % args.table,
                               (meta, id))
-            conn.commit()
+            cur_write.close()
 
         lod = {
             "http://purl.org/ontology/af/confidence": score,
@@ -147,12 +167,21 @@ for row in tqdm(cur, total=cur.rowcount):
         writer.writerow(csv_row)
         i += 1
         if i == 100:
+            conn.commit()
             i = 0
             csv_file.flush()
 
     except Exception as e:
         logger.warning('exception for %s', 'namenlijst/%s/%s/%s' % (full_pid, external_id, entity.replace(' ', '/')))
         logger.exception(e)
+
+
+# for row in tqdm(cur, total=cur.rowcount):
+#     run(*row)
+
+process._multithread.pbar = tqdm(total=cur.rowcount)
+process(cur)
+
 
 if csv_file is not sys.stdout:
     csv_file.close()

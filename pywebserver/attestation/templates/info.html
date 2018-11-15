@@ -77,7 +77,8 @@
                 </a></td> </tr>
                 <tr> <td> namenlijst</td> <td><a href="https://database.namenlijst.be/#/person/_id={{ nmlid }}" target="_blank">https://database.namenlijst.be/publicsearch/#/person/_id={{ nmlid }}</a></td></tr>
 
-                <tr> <td>OCR</td><td><p>{{ meta.description | highlight_words:entity | linebreaksbr }}</p></td> </tr>
+                <tr> <td>Meta.description</td><td><p>{{ meta.description | highlight_words:entity | linebreaksbr }}</p></td> </tr>
+                <tr> <td>OCR</td><td><p>{{ ocr_text | highlight_words:entity | linebreaksbr }}</p></td> </tr>
                 <tr> <td>Duplicate pids</td> <td>{{ pids }}</td> </tr>
                 <tr> <td>Matching score</td> <td><div class="quality" style="--quality: {{ link.score }};" title="Score: {{ link.score }}"></div> {{ score|pct }}</td> </tr>
                 <tr> <td>Description</td> <td>{{ person.summary }}</td> </tr>

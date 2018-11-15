@@ -32,6 +32,7 @@ def get_info(pid, words=None, extra_previews=True):
         alto=alto.search_words(words),
         alto_link=alto.url
     )
+    result['ocr_text'] = alto.text
 
     with mh.get_preview(pid) as im:
         result['previewImageUrl'] = im.meta['previewImagePath']

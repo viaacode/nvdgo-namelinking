@@ -79,8 +79,9 @@ class Matcher:
             # logger.debug('%s m: %s, i: %s, best_dist %d, bestidx %s', dir, m, i, best_dist, best_idx)
             words_distance = max(1, self.text.count(' ', best_idx[0], best_idx[1]+1))
 
-            if words_distance < 10:
-                logger.debug('FOUND "%s" (match "%s") in text "%s"', text, found_text, self.text[best_idx[0]:best_idx[1]+1])
+            # if words_distance < 10:
+            #     logger.debug('FOUND "%s" (match "%s") in text "%s"', text, found_text, self.text[best_idx[0]:best_idx[1]+1])
+
             if words_distance > max_distance:
                 continue
             distances.append(words_distance)
@@ -331,7 +332,6 @@ class Rater:
 
                 if 'bombardement' in nml.events['died']['death_reason']:
                     return ['bombardement', 'bombardeerd', 'bombarde', 'bommenwerp']
-
 
             addlookup('victim_type_details',
                       lambda: victim_type(nml.victim_type_details.lower()),
