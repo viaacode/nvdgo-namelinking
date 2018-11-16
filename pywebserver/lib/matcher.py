@@ -167,22 +167,26 @@ class Rater:
             val = str(val)
         if type(val) is str:
             val = [val]
+        val = set(map(str.strip, val))
         values = set(val)
 
         def add(a, b):
             values.add(v.replace(a, b))
             values.add(v.replace(b, a))
 
-        for v in val:
-            add('ks', 'x')    # koksijde <-> koxijde
-            add('aa', 'ae')   # vlAAr <-> vlAEr
-            add('c', 'k')     # Corbeek <-> Korbeek
-            add('ghe', 'ge')  # ledeghem <-> ledeGem
-            add('ll', 'lj')   # gefusiLLeerd <-> gefusiLJeerd
-            if v in Rater.possiblereplacements:
-                values.update(Rater.possiblereplacements[v])
-            if 'shire' in v and len(v) > 8:
-                values.add(v.replace('shire', ''))
+        for i in range(2):
+            for v in val:
+                add('ks', 'x')    # koksijde <-> koxijde
+                add('estraat', 'enstraat') # ravESTRAAT <-> ravENSTRAAT
+                add('aa', 'ae')   # vlAAr <-> vlAEr
+                add('c', 'k')     # Corbeek <-> Korbeek
+                add('ghe', 'ge')  # ledeghem <-> ledeGem
+                add('ll', 'lj')   # gefusiLLeerd <-> gefusiLJeerd
+                if v in Rater.possiblereplacements:
+                    values.update(Rater.possiblereplacements[v])
+                if 'shire' in v and len(v) > 8:
+                    values.add(v.replace('shire', ''))
+            val = set(values)
 
         return values
 
@@ -324,7 +328,7 @@ class Rater:
             def victim_type(name):
                 victim_types_to_text = dict(
                     executed=['executed', 'shot', 'gefusilleerd', 'fusillade', 'geschoten', 'doodgeschoten', 'geexecuteerd',
-                              'gefusiljeerd', 'veroordeeld', 'condamne'],
+                              'gefusiljeerd', 'veroordeeld', 'condamne', 'doodstraf'],
 
                 )
                 if name in victim_types_to_text:

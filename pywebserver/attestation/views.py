@@ -12,7 +12,7 @@ from django.http import Http404
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-
+import pathlib
 
 DEFAULT_MODEL = 'namenlijst'
 
@@ -109,3 +109,18 @@ def progress(request, model=None):
     io = BytesIO()
     fig.savefig(io, format='png')
     return HttpResponse(io.getvalue(), content_type="image/png")
+
+
+def evaluation(request, pid):
+    path = 'evals/'
+    files = [dir for dir in pathlib.Path(path).iterdir() if dir.is_dir()]
+
+    file = None
+    if pid is not None:
+        try:
+            file = next(dir for dir in files if dir.name == pid)
+        except StopIteration:
+            raise Http404("Unknown pid %s" % pid)
+
+    return __render(request, 'evaluation.html', {"files": files, "pid": pid, "file": file})
+

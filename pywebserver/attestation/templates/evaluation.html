@@ -1,0 +1,29 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+ <head>
+   <meta charset="utf-8">
+   <title>Attestation Tool</title>
+   <link rel="stylesheet" href="https://unpkg.com/purecss@1.0.0/build/pure-min.css" integrity="sha384-nn4HPE8lTHyVtfCBi5yW9d20FjT8BJwUXyWZT9InLYax14RDjBj46LmSztkmNP9w" crossorigin="anonymous">
+   <link rel="stylesheet" href="{% static "css/style.css" %}">
+   <!--<link rel="stylesheet" href="{% static "css/awesomplete.css" %}">-->
+   <!--<script src="https://d3js.org/d3.v5.min.js"></script>-->
+   <!--<script src="{% static "js/awesomplete.js" %}"></script>-->
+   <!--<script src="{% static "js/escaper.js" %}"></script>-->
+   <!--<script src="{% static "js/jsonrpc.js" %}"></script>-->
+   <!--<script src="{% static "js/fast.levenhstein.min.js" %}"></script>-->
+   <script type="text/javascript">
+   </script>
+ </head>
+ <body>
+    <div class="pure-menu pure-menu-horizontal">
+    <ul class="pure-menu-list">
+      {% for f in files %}
+      <li class="pure-menu-item{% if pid == f.name %} pure-menu-selected{% endif %}">
+          <a class="pure-menu-link" href="{% url 'evaluation' pid=f.name %}">{{f.name}}</a>
+      </li>
+      {% endfor %}
+    </ul>
+    </div>
+ </body>
+</html>
