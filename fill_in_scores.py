@@ -5,10 +5,10 @@ import psycopg2
 from tqdm import tqdm
 from pythonmodules.profiling import timeit
 from argparse import ArgumentParser
-from pywebserver.lib.matcher import Rater
+from pywebserver.lib.matcher import Rater, Meta
 import logging
 from pythonmodules.multithreading import multithreaded
-
+import json
 
 parser = ArgumentParser(description='Add/fill in scores in link tables')
 parser.add_argument('--start', type=int, nargs='?', help='start from')
@@ -35,20 +35,27 @@ conn2 = psycopg2.connect(config['connection_url'])
 cur = conn.cursor()
 with timeit('SELECT', 5000):
     where_clause = ('WHERE %s' % args.where) if args.where else ''
-    q = 'SELECT pid, nmlid, entity, id, score FROM %s %s ORDER BY status DESC, score DESC, pid ASC' % (args.table, where_clause)
+    q = 'SELECT id, pid, nmlid, entity, score, meta FROM %s %s ORDER BY status DESC, score DESC, pid ASC' % (args.table, where_clause)
     if args.limit:
         q += ' LIMIT %d' % int(args.limit)
     if args.start:
         q += ' OFFSET %d' % int(args.start)
     cur.execute(q)
 
+get_meta = Meta()
+
 
 @multithreaded(10, pre_start=True, pass_thread_id=False)
 def process(row):
     try:
-        rater = Rater(row[0], row[1], row[2])
-        identifier = row[3]
-        cur_rating = row[4]
+        id_, full_pid, external_id, entity, score, meta = row
+        rater = Rater(full_pid, external_id, entity)
+        cur_rating = score
+        meta_old = None
+        if meta:
+            meta_old = json.loads(meta)
+
+        meta = get_meta(full_pid, external_id, entity, score, meta)
         new_rating = 0
         try:
             rating = rater.ratings()
@@ -56,16 +63,16 @@ def process(row):
         except KeyError as e:
             logger.warning(e)
 
-        if cur_rating == new_rating:
+        if cur_rating == new_rating and meta == meta_old:
             return
         cur2 = conn2.cursor()
-        cur2.execute('UPDATE ' + args.table + ' SET score = %s WHERE id=%s', [new_rating, identifier])
+        cur2.execute('UPDATE ' + args.table + ' SET score = %s, meta = %s WHERE id=%s', [new_rating, json.dumps(meta), id_])
         cur2.close()
         conn2.commit()
     except Exception as e:
         url = 'http://do-tst-mke-01.do.viaa.be/attestation/info/model-namenlijst/%s/%s/%s' % \
-              (row[0], row[1], row[2].replace(' ', '/'))
-        logger.warning('exception for %s ( %s )', row, url)
+              (full_pid, external_id, entity.replace(' ', '/'))
+        logger.warning('exception for %s', url)
         logger.exception(e)
 
 
@@ -73,6 +80,11 @@ process._multithread.pbar = tqdm(total=cur.rowcount)
 process(cur)
 
 conn.commit()
+try:
+    conn2.commit()
+except Exception as e:
+    logger.info(e)
+
 cur.close()
 conn.close()
 conn2.close()

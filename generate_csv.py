@@ -5,9 +5,8 @@ import psycopg2
 from tqdm import tqdm
 from pythonmodules.profiling import timeit
 from argparse import ArgumentParser
-from pythonmodules.namenlijst import Namenlijst
-from pythonmodules.mediahaven import MediaHaven
 from pythonmodules.multithreading import multithreaded
+from pywebserver.lib.matcher import Meta
 import logging
 import csv
 import sys
@@ -52,7 +51,7 @@ conn = psycopg2.connect(config['connection_url'])
 cur = conn.cursor()
 
 with timeit('SELECT', 5000):
-    q = "SELECT id, pid, nmlid, entity, score, status, meta " \
+    q = "SELECT id, pid, nmlid, entity, score, meta " \
         "FROM %s " \
         "WHERE status != 2 %s " \
         "ORDER BY pid ASC " % (args.table, where)
@@ -65,91 +64,63 @@ with timeit('SELECT', 5000):
 headers = ('pid', 'page', 'type', 'external_id', 'name', 'lod', 'meta')
 writer = csv.writer(csv_file)
 writer.writerow(headers)
-nl = Namenlijst()
-mh = MediaHaven()
 
 i = 0
+
+
+get_meta = Meta()
 
 
 @multithreaded(10, pre_start=True, pass_thread_id=False)
 def process(row):
     global i, conn, cur_write
     try:
-        id, full_pid, external_id, entity, score, status, meta = row
-        attestation_id = 'namenlijst/%s/%s/%s' % (full_pid, external_id, entity.replace(' ', '/'))
+        id_, full_pid, external_id, entity, score, meta = row
+        meta = json.loads(meta)
+        orig_meta = meta
+        meta = Meta(full_pid, external_id, entity, score, meta)
+
         pid, pid_date, page = full_pid.split('_', 2)
         page = int(page)
-        if score > 0.99:
-            score = 0.99
-        if meta is not None:
-            meta = json.loads(meta)
-            full_name = meta['name']
-        else:
-            logger.info('Generate meta data for %s', attestation_id)
-            person = nl.get_person_full(external_id)
-            full_name = person.names.name
-            extra = dict()
-            extra['country'] = person.born_place['country_code'].upper()
-            extra['died_age'] = person.died_age
 
-            subtitle = []
+        full_name = meta['name']
 
-            if person.born_date is not None:
-                if len(person.born_place['name']):
-                    subtitle.append('\u00B0 %d %s' % (person.born_date.year, person.born_place['name']))
-                else:
-                    subtitle.append('\u00B0 %d' % (person.born_date.year,))
-
-            if person.died_date is not None:
-                if len(person.died_place['name']):
-                    subtitle.append('\u2020 %d %s' % (person.died_date.year, person.died_place['name']))
-                else:
-                    subtitle.append('\u2020 %d' % (person.died_date.year,))
-
-            subtitle = ', '.join(subtitle)
-
-            alto = mh.get_alto(full_pid)
-            search_res = alto.search_words([entity.split(' ')])
-            extent_textblock = search_res['extent_textblocks']
-            extents_highlight = [word['extent'] for word in search_res['words']]
-
-            if search_res['correction_factor'] != 1:
-                for word in extents_highlight:
-                    word.scale(search_res['correction_factor'], inplace=True)
-                extent_textblock.scale(search_res['correction_factor'], inplace=True)
-
-            extent_textblock = extent_textblock.as_coords()
-            extents_highlight = [extent.as_coords() for extent in extents_highlight]
-
-            meta = {
-                "name": full_name,
-                "found_name": entity,
-                "subtitle": subtitle,
-                "quality": score,
-                "zoom": extent_textblock,
-                "highlight": extents_highlight,
-                "full_pid": full_pid,
-                "attestation_id": attestation_id,
-                "coords_correctionfactor": search_res['correction_factor'],
-                "extra": extra
-            }
-
-            meta = json.dumps(meta)
-
+        if orig_meta != meta:
             cur_write = conn.cursor()
             cur_write.execute('UPDATE %s SET meta = %%s WHERE id=%%s' % args.table,
-                              (meta, id))
+                              (json.dumps(meta), id_))
             cur_write.close()
 
         lod = {
-            "http://purl.org/ontology/af/confidence": score,
+            "@context": [
+                "https://schema.org/",
+                {
+                    "dcterms": "http://purl.org/dc/terms/",
+                    "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+                    "af": "http://purl.org/ontology/af/",
+                    "label": "rdfs:label",
+                    "topicOf": {
+                        "@id": "http://xmlns.com/foaf/0.1/topicOf",
+                        "@type": "@id"
+                    },
+                    "mentions": {
+                        "@id": "schema:mentions",
+                        "@type": "@id"
+                    },
+                    "partOf": {
+                        "@id": "dcterms:partOf",
+                        "@type": "@id"
+                    }
+                }
+            ],
+            "af:confidence": score,
             "@graph": [
                 {
                     "@id": "https://hetarchief.be/pid/%s/%d" % (pid, page),
-                    "http://schema.org/mentions": [
+                    "https://schema.org/mentions": [
                         {
-                            "@id": "http://culturize.ilabt.imec.be/soldiers/data/%s" % (external_id,),
-                            "@type": "Person",
+                            "@id": "https://database.namenlijst.be/publicsearch/#/person/_id=%s" % (external_id,),
+                            "@type": "http://schema.org/Person",
                             "name": full_name,
                             "label": full_name,
                             "topicOf": {
@@ -175,9 +146,6 @@ def process(row):
         logger.warning('exception for %s', 'namenlijst/%s/%s/%s' % (full_pid, external_id, entity.replace(' ', '/')))
         logger.exception(e)
 
-
-# for row in tqdm(cur, total=cur.rowcount):
-#     run(*row)
 
 process._multithread.pbar = tqdm(total=cur.rowcount)
 process(cur)

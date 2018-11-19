@@ -11,6 +11,8 @@ from pysolr import Solr
 from .solrimport import Importer
 from pythonmodules.ner import normalize
 from functools import partial
+from pythonmodules.mediahaven import MediaHaven
+import json
 
 
 logger = logging.getLogger(__name__)
@@ -139,7 +141,10 @@ class Rater:
         sergeant=set(['sergent']),
         soldat=set(['soldaat', 'soldier']),
         kaporaal=set(['korporaal']),
+        handelaar=set(['verkoper', 'marchand'])
     )
+
+    possiblereplacements["voyageur de commerce"] = set(['handelaar'])
 
     for k in list(possiblereplacements.keys()):
         vals = possiblereplacements[k]
@@ -305,7 +310,7 @@ class Rater:
 
             addlookup('employer', lambda: nml.events['work']['work_company_name'], 3)
             addlookup('died_place_topo', lambda: nml.events['died']['topo'], 2, max_distance=300)
-            addlookup('profession', lambda: nml.events['work']['work_profession'], 2)
+            # addlookup('profession', lambda: nml.events['work']['work_profession'], 2)
             addlookup('school_topo', lambda: nml.events['school']['topo'], 2, max_distance=300)
             addlookup('school_name', lambda: nml.events['school']['school_name'], 2)
             addlookup('homeaddresstopo', lambda: homeaddress()['topo'], 2, max_distance=300)
@@ -321,7 +326,7 @@ class Rater:
                           lambda: nml.events['enlisted']['enlisted_regt'].split('/')[i],
                           1)
 
-            addlookup('profession_translated',
+            addlookup('profession',
                       lambda: transl(nml.events['work']['work_profession'].strip(' .').lower()),
                       2)
 
@@ -367,3 +372,90 @@ class Rater:
         if len(scores) == 1:
             total /= 2
         return Rating(scores, total)
+
+
+class Meta:
+    def __init__(self, config=None):
+        self.nl = Namenlijst(config)
+        self.mh = MediaHaven(config)
+
+    def __call__(self, full_pid, external_id, entity, score, meta):
+        nl = self.nl
+        mh = self.mh
+        attestation_id = 'namenlijst/%s/%s/%s' % (full_pid, external_id, entity.replace(' ', '/'))
+        if score > 0.99:
+            score = 0.99
+
+        if meta is not None:
+            if type(meta) is str:
+                meta = json.loads(meta)
+        else:
+            meta = dict()
+
+        meta['found_name'] = entity
+        meta['quality'] = score
+        meta['full_pid'] = full_pid
+        meta['attestation_id'] = attestation_id
+
+        def notexists(*fields):
+            return any(field not in meta or meta[field] is None for field in fields)
+
+        logger.info('Generate meta data for %s', attestation_id)
+
+        keys = ('born_country', 'died_country', 'died_age', 'gender', 'victim_type', 'victim_type_details')
+        if notexists('extra', 'subtitle', 'name') or \
+           any(f not in meta['extra'] for f in keys):
+            person = nl.get_person_full(external_id)
+            meta['name'] = person.names.name
+            extra = dict()
+            extra['born_country'] = person.born_place['country_code'].upper()
+            extra['died_country'] = person.died_place['country_code'].upper()
+            extra['died_age'] = person.died_age
+            extra['gender'] = person.gender
+            extra['victim_type'] = person.victim_type
+            extra['victim_type_details'] = person.victim_type_details
+
+            if type(person.born_date) is str:
+                extra['born_year'] = person.born_date[:4]
+
+            if type(person.died_date) is str:
+                extra['died_year'] = person.died_date[:4]
+
+            meta['extra'] = extra
+
+            subtitle = []
+
+            if person.born_date is not None:
+                if len(person.born_place['name']):
+                    subtitle.append('\u00B0 %d %s' % (person.born_date.year, person.born_place['name']))
+                else:
+                    subtitle.append('\u00B0 %d' % (person.born_date.year,))
+
+            if person.died_date is not None:
+                if len(person.died_place['name']):
+                    subtitle.append('\u2020 %d %s' % (person.died_date.year, person.died_place['name']))
+                else:
+                    subtitle.append('\u2020 %d' % (person.died_date.year,))
+
+            subtitle = ', '.join(subtitle)
+            meta['subtitle'] = subtitle
+
+        if notexists('zoom', 'highlight', 'coords_correctionfactor'):
+            alto = mh.get_alto(full_pid)
+            search_res = alto.search_words([entity.split(' ')])
+            extent_textblock = search_res['extent_textblocks']
+            extents_highlight = [word['extent'] for word in search_res['words']]
+
+            if search_res['correction_factor'] != 1:
+                for word in extents_highlight:
+                    word.scale(search_res['correction_factor'], inplace=True)
+                extent_textblock.scale(search_res['correction_factor'], inplace=True)
+
+            extent_textblock = extent_textblock.as_coords()
+            extents_highlight = [extent.as_coords() for extent in extents_highlight]
+
+            meta["zoom"] = extent_textblock
+            meta["highlight"] = extents_highlight
+            meta["coords_correctionfactor"] = search_res['correction_factor']
+
+        return meta
