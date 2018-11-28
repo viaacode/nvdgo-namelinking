@@ -73,12 +73,12 @@ get_meta = Meta()
 
 @multithreaded(10, pre_start=True, pass_thread_id=False)
 def process(row):
-    global i, conn, cur_write
+    global i, conn
     try:
         id_, full_pid, external_id, entity, score, meta = row
         meta = json.loads(meta)
         orig_meta = meta
-        meta = Meta(full_pid, external_id, entity, score, meta)
+        meta = get_meta(full_pid, external_id, entity, score, meta)
 
         pid, pid_date, page = full_pid.split('_', 2)
         page = int(page)
@@ -95,6 +95,7 @@ def process(row):
             "@context": [
                 "https://schema.org/",
                 {
+                    "confidence": "http://purl.org/ontology/af/confidence",
                     "dcterms": "http://purl.org/dc/terms/",
                     "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
                     "af": "http://purl.org/ontology/af/",
@@ -113,14 +114,14 @@ def process(row):
                     }
                 }
             ],
-            "af:confidence": score,
+            "confidence": score,
             "@graph": [
                 {
                     "@id": "https://hetarchief.be/pid/%s/%d" % (pid, page),
                     "https://schema.org/mentions": [
                         {
                             "@id": "https://database.namenlijst.be/publicsearch/#/person/_id=%s" % (external_id,),
-                            "@type": "http://schema.org/Person",
+                            "@type": "https://schema.org/Person",
                             "name": full_name,
                             "label": full_name,
                             "topicOf": {
@@ -134,6 +135,7 @@ def process(row):
         }
 
         lod = json.dumps(lod)
+        meta = json.dumps(meta)
         csv_row = [pid, page, 'namenlijst', external_id, entity, lod, meta]
         writer.writerow(csv_row)
         i += 1
@@ -154,7 +156,6 @@ process(cur)
 if csv_file is not sys.stdout:
     csv_file.close()
 
-cur_write.close()
 cur.close()
 conn.close()
 

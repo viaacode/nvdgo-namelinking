@@ -8,6 +8,9 @@ from io import BytesIO
 from lib.matcher import Rater
 from lib.dubbels import get_all_for_pid
 from django.http import Http404
+import seaborn as sns
+from django.views.decorators.cache import cache_page
+
 
 import matplotlib
 matplotlib.use('Agg')
@@ -24,7 +27,7 @@ def get_model(model=None) -> models.LinkBase:
     return models.__dict__[model]
 
 
-def __render(request, file, context={}):
+def __render(request, file, context=None):
     return render(request, file, context=context)
 
 
@@ -118,9 +121,43 @@ def evaluation(request, pid):
     file = None
     if pid is not None:
         try:
-            file = next(dir for dir in files if dir.name == pid)
+            file = next(dir_ for dir_ in files if dir_.name == pid)
         except StopIteration:
             raise Http404("Unknown pid %s" % pid)
 
     return __render(request, 'evaluation.html', {"files": files, "pid": pid, "file": file})
 
+
+# @cache_page(60)
+def stats(request, model=None, statname=None, format_=None):
+    from .stats import Stats
+    if format_ is None:
+        format_ = 'svg'
+    try:
+        model = get_model(model)
+    except KeyError:
+        return HttpResponseNotFound('<h1>Link type "%s" not found</h1>' % model)
+    obj = Stats(model)
+    modelname = model.__name__[4:].lower()
+
+    if statname is None:
+        context = {
+            "statname": statname,
+            "model": modelname,
+            "format": format_,
+            "segments": (n for n in dir(obj) if n[:8] == 'segment_')
+        }
+        for funcname in (n for n in dir(obj) if n[:7] == '_stats_'):
+            context[funcname[1:]] = getattr(obj, funcname)()
+        return __render(request, 'stats.html', context)
+
+    if statname[0] == '_':
+        return Http404("Invalid statname '%s'" % (statname,))
+
+    if format_ not in obj.format_to_type:
+        raise Http404("Unknown format '%s' requested" % (format_,))
+
+    if not hasattr(obj, statname):
+        raise Http404("Unknown statname '%s'" % (statname,))
+
+    return obj._output(statname, format_)

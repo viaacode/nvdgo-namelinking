@@ -36,7 +36,11 @@ class LinkBase(models.Model):
 
     @property
     def status_text(self):
-        names = next(filter(lambda x: x[0] == self.status, self.STATUS_CHOICES))
+        return type(self).status_id_to_text(self.status)
+
+    @classmethod
+    def status_id_to_text(cls, id_):
+        names = next(filter(lambda x: x[0] == id_, cls.STATUS_CHOICES))
         if not len(names):
             return None
         return names[1]

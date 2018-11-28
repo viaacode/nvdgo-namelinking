@@ -8,10 +8,11 @@ from lib.dubbels import get_all_for_pid
 from django.forms.models import model_to_dict
 
 urlpatterns = [
-   url('^(?:model-(?P<model>[^/]+))?$', views.index, name='index'),
+   url('^(?:model-(?P<model>\w+))?$', views.index, name='index'),
    path('loading', views.loading, name='loading'),
-   url('evaluation(?:/(?P<pid>.+))?', views.evaluation, name='evaluation'),
-   url('progress(?:-(?P<model>[a-z]+))?.png', views.progress, name='progress'),
+   url(r'stats(?:-(?P<model>\w+))?(?:/(?P<statname>[\w]+)\.(?P<format_>\w{3}))?$', views.stats, name='stats'),
+   url('evaluation(?:/(?P<pid>.+))?$', views.evaluation, name='evaluation'),
+   # url('progress(?:-(?P<model>[a-z]+))?.png$', views.progress, name='progress'),
    url('^info(?:/model-(?P<model>[^/]+))?/(?P<pid>[^/]+)/?$', views.pid, name='pid'),
    url('^info(?:/model-(?P<model>[^/]+))?/(?P<pid>[^/]+)/(?P<nmlid>[^/]+)/(?P<words>.+)$', views.info, name='info'),
 ]

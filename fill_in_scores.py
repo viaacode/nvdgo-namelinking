@@ -59,6 +59,7 @@ def process(row):
         new_rating = 0
         try:
             rating = rater.ratings()
+            meta['rating_breakdown'] = {k: rating.scores[k].rating for k in rating.scores}
             new_rating = rating.total
         except KeyError as e:
             logger.warning(e)

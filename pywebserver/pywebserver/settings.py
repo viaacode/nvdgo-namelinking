@@ -117,12 +117,29 @@ CACHES = {
         'OPTIONS': {
             'MAX_ENTRIES': 10000
         }
+    },
+    'stats': {
+        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
+        'LOCATION': 'cache',
+        'TIMEOUT': 3600 * 24,
+        'OPTIONS': {
+            'MAXENTRIES': 50,
+        },
+        'VERSION': 5
     }
 }
+#disable for a bit
+# CACHES['stats']['BACKEND'] = 'django.core.cache.backends.dummy.DummyCache'
 
 log_screen = {
     'level': 'DEBUG',
     'handlers': ['console'],
+    'propagate': False,
+}
+
+log_all = {
+    'level': 'DEBUG',
+    'handlers': ['console', 'file'],
     'propagate': False,
 }
 
@@ -166,12 +183,10 @@ LOGGING = {
             'handlers': ['console', 'file'],
             'propagate': False,
         },
-        'requests.packages.urllib3': {
-            'level': 'DEBUG',
-            'handlers': ['console', 'file'],
-            'propagate': False,
-        },
+        'requests.packages.urllib3': log_all,
+        'http_client.HTTPConnection': log_all,
         'pythonmodules': log_screen,
+        'attestation.stats': log_all,
         'pythonmodules.decorators': {
             'level': 'INFO',
             'handlers': ['console'],

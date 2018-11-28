@@ -13,6 +13,7 @@ from pythonmodules.ner import normalize
 from functools import partial
 from pythonmodules.mediahaven import MediaHaven
 import json
+from babel.dates import format_date, get_date_format, DateTimePattern
 
 
 logger = logging.getLogger(__name__)
@@ -106,14 +107,14 @@ class Matcher:
             return {}
         result = dict()
         done = []
-        logger.debug('lookups: %s', lookups)
+        # logger.debug('lookups: %s', lookups)
         for k, lookup in lookups.items():
             if lookup is None:
                 logger.debug('check %s: None', k)
                 continue
             v, multiplier, vals, max_distance = lookup
             score = []
-            logger.debug('check %s: %s', k, vals)
+            # logger.debug('check %s: %s', k, vals)
             for val in vals:
                 norm_val = self.normalize(val)
                 # avoid scores being added multiple times
@@ -125,7 +126,9 @@ class Matcher:
             if len(score):
                 amount = len(score)
                 min_distance = min(s.min_distance for s in score)
-                rating = multiplier/(4*(min_distance**1.2))
+                dist_pct = (min_distance / (lookup.max_distance+1))
+                rating = multiplier/((80*dist_pct)**1.2)
+                rating = multiplier/(3*(min_distance**1.2))
                 result[k] = Scores(amount,
                                    min_distance,
                                    set([str(s.match) for s in score]),
@@ -141,7 +144,7 @@ class Rater:
         sergeant=set(['sergent']),
         soldat=set(['soldaat', 'soldier']),
         kaporaal=set(['korporaal']),
-        handelaar=set(['verkoper', 'marchand'])
+        handelaar=set(['verkoper', 'marchand', "koopman"])
     )
 
     possiblereplacements["voyageur de commerce"] = set(['handelaar'])
@@ -187,6 +190,7 @@ class Rater:
                 add('c', 'k')     # Corbeek <-> Korbeek
                 add('ghe', 'ge')  # ledeghem <-> ledeGem
                 add('ll', 'lj')   # gefusiLLeerd <-> gefusiLJeerd
+                values.add(v.replace('adjoint', ''))
                 if v in Rater.possiblereplacements:
                     values.update(Rater.possiblereplacements[v])
                 if 'shire' in v and len(v) > 8:
@@ -273,6 +277,36 @@ class Rater:
                     raise KeyError("no homeaddress")
                 return v
 
+            def getdates(d, lang):
+                def dformat(x):
+                    form = get_date_format(x, lang)
+                    form = form.pattern.replace('y', '').replace('Y', '')
+                    return format_date(d, locale=lang, format=form)
+
+                formats = list(map(dformat, ('short', 'medium', 'long', 'full')))
+                return formats
+
+            def adddatelookup(name, f, multiplier=1, max_distance=50):
+                lookup = None
+                try:
+                    val = f()
+
+                    langmappings = {
+                        "nl": "nl_BE",
+                        "fr": "fr_FR",
+                        "de": "de_DE",
+                        "en": "en_GB",
+                    }
+
+                    alternate_spellings = getdates(val, langmappings[self.language])
+                    strv = alternate_spellings[0]
+                    lookup = Lookup(strv, multiplier, alternate_spellings, max_distance)
+                    pass
+                except Exception as e:
+                    debug_call(err, name, e)
+                finally:
+                    self._lookups[name] = lookup
+
             def addnumlookup(name, f, multiplier=1, max_distance=20, buffer=0, min_len=None):
                 lookup = None
                 try:
@@ -281,7 +315,7 @@ class Rater:
                     if type(strv) is not str:
                         strv = str(strv)
 
-                    if val is None or val == 0:
+                    if val is None or val < 10:
                         raise KeyError('too low')
 
                     if buffer > 0:
@@ -308,9 +342,8 @@ class Rater:
                 items.append(text)
                 return chain(*items)
 
-            addlookup('employer', lambda: nml.events['work']['work_company_name'], 3)
+            addlookup('employer', lambda: nml.events['work']['work_company_name'], 2)
             addlookup('died_place_topo', lambda: nml.events['died']['topo'], 2, max_distance=300)
-            # addlookup('profession', lambda: nml.events['work']['work_profession'], 2)
             addlookup('school_topo', lambda: nml.events['school']['topo'], 2, max_distance=300)
             addlookup('school_name', lambda: nml.events['school']['school_name'], 2)
             addlookup('homeaddresstopo', lambda: homeaddress()['topo'], 2, max_distance=300)
@@ -326,14 +359,16 @@ class Rater:
                           lambda: nml.events['enlisted']['enlisted_regt'].split('/')[i],
                           1)
 
+            addlookup('work_company', lambda: transl(nml.events['work']['work_company_name'].strip(' .').lower()))
+
             addlookup('profession',
                       lambda: transl(nml.events['work']['work_profession'].strip(' .').lower()),
                       2)
 
             def victim_type(name):
                 victim_types_to_text = dict(
-                    executed=['executed', 'shot', 'gefusilleerd', 'fusillade', 'geschoten', 'doodgeschoten', 'geexecuteerd',
-                              'gefusiljeerd', 'veroordeeld', 'condamne', 'doodstraf'],
+                    executed=['execute', 'shot', 'gefusilleerd', 'fusillade', 'geschoten', 'doodgeschoten', 'geexecuteerd',
+                              'gefusiljeerd', 'veroordeeld', 'condamne', 'doodstraf', 'doodvonnis', 'martyr'],
 
                 )
                 if name in victim_types_to_text:
@@ -352,8 +387,12 @@ class Rater:
 
             addlookup('died_place_locality', lambda: nml.died_place['locality'])
             addlookup('born_place_locality', lambda: nml.born_place['locality'])
+
             addlookup('homeaddress', lambda: homeaddress()['place']['name'])
-            addnumlookup('died_age', lambda: nml.died_age, max_distance=5, buffer=1)
+
+            adddatelookup('died_date', lambda: nml.died_date)
+            addlookup('work_place_locality', lambda: nml.events['work']['place']['locality'], multiplier=0.5)
+            addnumlookup('died_age', lambda: nml.died_age, max_distance=5, buffer=1, multiplier=0.5)
 
         return self._lookups
 

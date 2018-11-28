@@ -1,0 +1,69 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+ <head>
+   <meta charset="utf-8">
+   <title>Statistics</title>
+   <!--<link rel="stylesheet" href="https://unpkg.com/purecss@1.0.0/build/pure-min.css" integrity="sha384-nn4HPE8lTHyVtfCBi5yW9d20FjT8BJwUXyWZT9InLYax14RDjBj46LmSztkmNP9w" crossorigin="anonymous">-->
+   <link href="{% static "css/typeset.min.css" %}"  rel="stylesheet" type="text/css" />
+   <style type="text/css">
+       section { overflow:auto; width: 100%; }
+       img.graph { margin: 5px 20px 5px 5px; box-shadow: 0 0 5px black; padding 5px;  }
+       .float { float: left; }
+   </style>
+   <script type="text/javascript">
+   </script>
+ </head>
+ <body>
+    <h1>Statistics (for {{ model }})</h1>
+
+    <h2>Overall</h2>
+    <h3>Matches</h3>
+    <dl>
+        {% for k, v in stats_matches.items %}
+            <dt>{{ k }}: </dt>
+            <dd>{{ v }}</dd>
+        {% endfor %}
+    </dl>
+
+    <h3>Attestation</h3>
+    <section>
+        <img src="{% url 'stats' model=model statname="attestationcounts" format_=format %}" class="graph float" />
+        <dl>
+            {% for k, v in stats_attestation.items %}
+                <dt>{{ k }}: </dt>
+                <dd>{{ v }}</dd>
+            {% endfor %}
+        </dl>
+
+    </section>
+
+    <h2>Matches with scores</h2>
+
+    <h3>Distribution</h3>
+    <section>
+        <img src="{% url 'stats' model=model statname="scores_kde1" format_=format %}" class="graph" />
+        <img src="{% url 'stats' model=model statname="scores_kde2" format_=format %}" class="graph" />
+        <img src="{% url 'stats' model=model statname="scores_kde3" format_=format %}" class="graph" />
+    </section>
+
+    <h3>Scores breakdown</h3>
+    <section>
+        <img src="{% url 'stats' model=model statname="scores_data_counts" format_=format %}" class="graph" />
+    </section>
+
+    <h3>Impact of fields on scores</h3>
+    <section>
+        <img src="{% url 'stats' model=model statname="scores_status_impact" format_=format %}" class="graph" />
+        <img src="{% url 'stats' model=model statname="scores_field_impact" format_=format %}" class="graph" />
+    </section>
+
+
+    <h3>Segmentations</h3>
+    <section>
+        {% for segment in segments %}
+        <img src="{% url 'stats' model=model statname=segment format_=format %}" class="graph" />
+        {% endfor %}
+    </section>
+ </body>
+</html>
