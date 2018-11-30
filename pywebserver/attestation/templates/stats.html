@@ -1,16 +1,25 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
- <head>
+<head>
    <meta charset="utf-8">
    <title>Statistics</title>
    <!--<link rel="stylesheet" href="https://unpkg.com/purecss@1.0.0/build/pure-min.css" integrity="sha384-nn4HPE8lTHyVtfCBi5yW9d20FjT8BJwUXyWZT9InLYax14RDjBj46LmSztkmNP9w" crossorigin="anonymous">-->
    <link href="{% static "css/typeset.min.css" %}"  rel="stylesheet" type="text/css" />
    <style type="text/css">
        section { overflow:auto; width: 100%; }
-       img {    page-break-inside: avoid; }
-       img.graph { margin: 5px 20px 5px 5px; box-shadow: 0 0 5px black; padding 5px;  }
+       img { page-break-inside: avoid; page-break-before: auto; page-break-after: auto; max-height: 95%; max-width: 95%;}
+       img.graph { margin: 5px 20px 5px 5px; padding 5px;  }
+       img.graph, dl { box-shadow: 0 0 5px black; margin: 5px 20px 5px 5px; vertical-align: top; }
+       dl { padding: 10px; width: fit-content; display: grid; grid-template-columns: max-content auto; }
+       dt { grid-column-start: 1; }
+       dd { grid-column-start: 2; }
        .float { float: left; }
+       img::after { content: "\A"; }
+       dd {}
+       dt, dd { font-stretch: condensed; }
+       body { font-family: "Helvetica Neue",Helvetica,Arial,sans-serif; }
+       h1, h2, h3, h4, h5, h6 { margin-top: 60px; 'Proxima Nova Soft', 'Helvetica Neue', sans-serif; }
    </style>
    <script type="text/javascript">
    </script>
@@ -20,6 +29,10 @@
 
     <h2>Overall</h2>
     <h3>Matches</h3>
+    <p>
+        A match is defined as any first and family name combination (or alternative spellings) that
+        was found <strong>exactly</strong> in the OCR of a newspaper page.
+    </p>
     <dl>
         {% for k, v in stats_matches.items %}
             <dt>{{ k }}: </dt>
@@ -29,6 +42,9 @@
 
     <h3>Attestation</h3>
     <section>
+        <p>
+            Summary of the results of manual attestation (using our attestation tool).
+        </p>
         <img src="{% url 'stats' model=model statname="attestationcounts" format_=format %}" class="graph float" />
         <dl>
             {% for k, v in stats_attestation.items %}
@@ -36,12 +52,20 @@
                 <dd>{{ v }}</dd>
             {% endfor %}
         </dl>
-
     </section>
 
     <h2>Matches with scores</h2>
+    <p>
+        Breakdown of the matches that have a score > 0%.
+    </p>
 
-    <h3>Distribution</h3>
+    <h3>Scores per status</h3>
+    <section>
+        <img src="{% url 'stats' model=model statname="swarm_scores_status" format_=format %}" class="graph" />
+        <img src="{% url 'stats' model=model statname="violin_scores_status" format_=format %}" class="graph" />
+    </section>
+
+    <h3>Scores distribution</h3>
     <section>
         <img src="{% url 'stats' model=model statname="scores_kde1" format_=format %}" class="graph" />
         <img src="{% url 'stats' model=model statname="scores_kde2" format_=format %}" class="graph" />
@@ -50,18 +74,33 @@
 
     <h3>Scores breakdown</h3>
     <section>
+        <p>
+            Breakdown of the score, shows the amount of each field that was found and used to increase the score.
+        </p>
         <img src="{% url 'stats' model=model statname="scores_data_counts" format_=format %}" class="graph" />
     </section>
 
     <h3>Impact of fields on scores</h3>
     <section>
-        <img src="{% url 'stats' model=model statname="scores_status_impact" format_=format %}" class="graph" />
+        <p>
+            Box-and-whisker plot of scores per field
+        </p>
         <img src="{% url 'stats' model=model statname="scores_field_impact" format_=format %}" class="graph" />
+    </section>
+
+    <section>
+        <p>
+            The individual score per field (only matches that have been attested are shown)
+        </p>
+        <img src="{% url 'stats' model=model statname="scores_status_impact" format_=format %}" class="graph" />
     </section>
 
 
     <h3>Segmentations</h3>
     <section>
+        <p>
+            Breakdown of data about people matched (segmentation data from IFFM)
+        </p>
         {% for segment in segments %}
         <img src="{% url 'stats' model=model statname=segment format_=format %}" class="graph" />
         {% endfor %}

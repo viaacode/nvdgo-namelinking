@@ -127,7 +127,7 @@ class Matcher:
                 amount = len(score)
                 min_distance = min(s.min_distance for s in score)
                 dist_pct = (min_distance / (lookup.max_distance+1))
-                rating = multiplier/((80*dist_pct)**1.2)
+                # rating = multiplier/((80*dist_pct)**1.2)
                 rating = multiplier/(3*(min_distance**1.2))
                 result[k] = Scores(amount,
                                    min_distance,
@@ -185,9 +185,10 @@ class Rater:
         for i in range(2):
             for v in val:
                 add('ks', 'x')    # koksijde <-> koxijde
-                add('estraat', 'enstraat') # ravESTRAAT <-> ravENSTRAAT
+                add('estraat', 'enstraat')  # ravESTRAAT <-> ravENSTRAAT
                 add('aa', 'ae')   # vlAAr <-> vlAEr
                 add('c', 'k')     # Corbeek <-> Korbeek
+                add('ck', 'k')    # werviK <-> werviCK
                 add('ghe', 'ge')  # ledeghem <-> ledeGem
                 add('ll', 'lj')   # gefusiLLeerd <-> gefusiLJeerd
                 values.add(v.replace('adjoint', ''))

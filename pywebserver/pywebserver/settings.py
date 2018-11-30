@@ -125,7 +125,7 @@ CACHES = {
         'OPTIONS': {
             'MAXENTRIES': 50,
         },
-        'VERSION': 5
+        'VERSION': 6
     }
 }
 #disable for a bit
