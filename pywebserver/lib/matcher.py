@@ -126,9 +126,9 @@ class Matcher:
             if len(score):
                 amount = len(score)
                 min_distance = min(s.min_distance for s in score)
-                dist_pct = (min_distance / (lookup.max_distance+1))
+                # dist_pct = (min_distance / (lookup.max_distance+1))*20
                 # rating = multiplier/((80*dist_pct)**1.2)
-                rating = multiplier/(3*(min_distance**1.2))
+                rating = multiplier/(3*(min_distance**1.1))
                 result[k] = Scores(amount,
                                    min_distance,
                                    set([str(s.match) for s in score]),
