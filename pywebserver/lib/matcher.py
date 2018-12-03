@@ -1,6 +1,5 @@
 import re
-import unidecode
-from collections import namedtuple, defaultdict, OrderedDict
+from collections import namedtuple, OrderedDict
 from itertools import chain
 from pythonmodules.profiling import timeit
 from pythonmodules.namenlijst import Namenlijst
@@ -10,10 +9,9 @@ import logging
 from pysolr import Solr
 from .solrimport import Importer
 from pythonmodules.ner import normalize
-from functools import partial
 from pythonmodules.mediahaven import MediaHaven
 import json
-from babel.dates import format_date, get_date_format, DateTimePattern
+from babel.dates import format_date, get_date_format
 
 
 logger = logging.getLogger(__name__)
