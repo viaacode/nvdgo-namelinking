@@ -1,4 +1,5 @@
 {% load static %}
+{% load compile_static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,6 +7,7 @@
    <title>Statistics</title>
    <!--<link rel="stylesheet" href="https://unpkg.com/purecss@1.0.0/build/pure-min.css" integrity="sha384-nn4HPE8lTHyVtfCBi5yW9d20FjT8BJwUXyWZT9InLYax14RDjBj46LmSztkmNP9w" crossorigin="anonymous">-->
    <link href="{% static "css/typeset.min.css" %}"  rel="stylesheet" type="text/css" />
+   <link href="{% static "css/quality.less"|compile %}" rel="stylesheet" type="text/css" />
    <style type="text/css">
        section { overflow:auto; width: 100%; }
        img { page-break-inside: avoid; page-break-before: auto; page-break-after: auto; max-height: 95%; max-width: 95%;}
@@ -20,6 +22,10 @@
        dt, dd { font-stretch: condensed; }
        body { font-family: "Helvetica Neue",Helvetica,Arial,sans-serif; }
        h1, h2, h3, h4, h5, h6 { margin-top: 60px; 'Proxima Nova Soft', 'Helvetica Neue', sans-serif; }
+       ul { list-style-type: none; }
+       li { margin-bottom: 1em; }
+       a, a:link, a:visited, a:hover { color: gray; text-decoration: none; }
+       body { -webkit-print-color-adjust: exact !important; color-adjust: exact; }
    </style>
    <script type="text/javascript">
    </script>
@@ -105,5 +111,44 @@
         <img src="{% url 'stats' model=model statname=segment format_=format %}" class="graph" />
         {% endfor %}
     </section>
+
+    <h2>Example matches</h2>
+    <h3>Highest rated matches</h3>
+    <section>
+        <ul>
+        {% for match in highest_scores.itertuples %}
+            {% include "match.html" %}
+        {% endfor %}
+        </ul>
+    </section>
+
+    <h3>Young deaths (≤ 8y/o)</h3>
+    <section>
+        <ul>
+        {% for match in young_deaths.itertuples %}
+            {% include "match.html" %}
+        {% endfor %}
+        </ul>
+    </section>
+
+    <h3>Old deaths (> 75y/o)</h3>
+    <section>
+        <ul>
+        {% for match in old_deaths.itertuples %}
+            {% include "match.html" %}
+        {% endfor %}
+        </ul>
+    </section>
+
+    {% for segment_name, segmentdata in segmented_deaths.items %}
+    <h3>Highest rated deaths per {{ segment_name }}</h3>
+    <section>
+        <ul>
+        {% for match in segmentdata.itertuples %}
+            {% include "match.html" with extra_value=segment_name %}
+        {% endfor %}
+        </ul>
+    </section>
+    {% endfor %}
  </body>
 </html>

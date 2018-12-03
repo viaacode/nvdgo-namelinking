@@ -121,11 +121,11 @@ CACHES = {
     'stats': {
         'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
         'LOCATION': 'cache',
-        'TIMEOUT': 3600 * 24,
+        'TIMEOUT': 300,
         'OPTIONS': {
             'MAXENTRIES': 50,
         },
-        'VERSION': 6
+        'VERSION': 9
     }
 }
 #disable for a bit

@@ -206,6 +206,7 @@ class Rater:
             res = self._solr.search('id:%s' % self.pid, rows=1, fl=['text', 'language'])
 
             if res.hits == 0:
+                logger.warning('%s not yet in solr, import now', self.pid)
                 # might as well import it now
                 importer = Importer()
                 importer.process(self.pid)
@@ -236,7 +237,7 @@ class Rater:
     @property
     def lookups(self):
         if self._lookups is None:
-            debug_call = logger.info
+            debug_call = logger.debug
             nml = self.details
             self._lookups = OrderedDict()
             err = 'LOOKUP "%s" %s'
@@ -282,10 +283,11 @@ class Rater:
                 def dformat(x):
                     form = get_date_format(x, lang)
                     form = form.pattern.replace('y', '').replace('Y', '')
-                    return format_date(d, locale=lang, format=form)
+                    return str(format_date(d, locale=lang, format=form)).lower()
 
                 formats = list(map(dformat, ('short', 'medium', 'long', 'full')))
-                return formats
+                formats.extend([format_.replace('augustus', 'oogst') for format_ in formats])
+                return list(set(formats))
 
             def adddatelookup(name, f, multiplier=1, max_distance=50):
                 lookup = None

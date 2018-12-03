@@ -104,7 +104,7 @@ class Stats:
 
     def _output(self, kind, format_=None):
         if not hasattr(self, kind):
-            return NotImplementedError
+            raise NotImplementedError()
         fig = getattr(self, kind)()
         return self._get_plt_response(format_, fig)
 
@@ -122,17 +122,26 @@ class Stats:
 
     @decorators.classcache
     def _usersegmentations(self):
-        q = 'SELECT meta, status, score FROM %s WHERE status != %d AND score > 0' % \
-            (self.table, self.model.SKIP)
+        fields = ('meta', 'nmlid', 'status', 'score')
+        q = 'SELECT %s FROM %s WHERE status != %d AND score > 0' % \
+            (', '.join(fields), self.table, self.model.SKIP)
         res = self.db.execute(q)
         data = []
         data_fields = []
         for row in res:
-            meta = json.loads(row[0])
+            row = dict(zip(fields, row))
+            meta = json.loads(row['meta'])
             extra = meta['extra']
-            status = self.model.status_id_to_text(row[1])
+            status = self.model.status_id_to_text(row['status'])
             extra['status'] = status
-            extra['score'] = min(row[2], 1)
+            extra['score'] = min(row['score'], 1)
+            extra['name'] = meta['name']
+            extra['subtitle'] = meta['subtitle']
+            extra['pid'] = meta['full_pid']
+            splitpid = extra['pid'].split('_')
+            extra['nmlid'] = row['nmlid']
+            extra['url'] = 'https://hetarchief.be/pid/%s/%d' % (splitpid[0], int(splitpid[2]))
+            extra['nmlurl'] = 'https://database.namenlijst.be/#/person/_id=%s' % extra['nmlid']
             try:
                 extra['died_age'] = int(extra['died_age'])
             except (ValueError, TypeError):
@@ -140,6 +149,7 @@ class Stats:
 
             if type(extra['died_age']) is not int:
                 extra['died_age'] = None
+
             data.append(extra)
 
             for k, v in meta['rating_breakdown'].items():
@@ -308,3 +318,42 @@ class Stats:
 
     def violin_scores_status(self):
         return self.swarm_scores_status('violin')
+
+    def _highest_scores(self):
+        stats = self._usersegmentations()
+        nomatch = self.model.status_id_to_text(self.model.NO_MATCH)
+        stats = stats['extra']
+        stats = stats[stats.status != nomatch]
+        return stats.nlargest(20, columns='score')
+
+    def _young_deaths(self):
+        stats = self._usersegmentations()
+        stats = stats['extra']
+        nomatch = self.model.status_id_to_text(self.model.NO_MATCH)
+        stats = stats[stats.status != nomatch]
+        stats = stats[stats.score > 0]
+        stats = stats[stats.died_age.notnull()]
+        stats = stats[stats.died_age <= 8]
+        return stats.nlargest(10, columns='score')
+
+    def _old_deaths(self):
+        stats = self._usersegmentations()
+        stats = stats['extra']
+        nomatch = self.model.status_id_to_text(self.model.NO_MATCH)
+        stats = stats[stats.status != nomatch]
+        stats = stats[stats.score > 0]
+        stats = stats[stats.died_age.notnull()]
+        stats = stats[stats.died_age > 75]
+        return stats.nlargest(10, columns='score')
+
+    def _segmented_deaths(self, segment):
+        stats = self._usersegmentations()
+        stats = stats['extra']
+        nomatch = self.model.status_id_to_text(self.model.NO_MATCH)
+        stats = stats[stats.status != nomatch]
+        stats = stats[stats.score > 0]
+        # stats = stats[stats[segment].notnull()]
+        stats = stats.sort_values('score', ascending=False).groupby(segment)
+        amount = 1 if len(stats) > 8 else 3
+        return stats.head(amount)
+

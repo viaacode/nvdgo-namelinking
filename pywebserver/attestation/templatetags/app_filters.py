@@ -146,3 +146,13 @@ def pct(txt: float):
 @register.filter(name='times')
 def times(txt: str, amount: float):
     return str(txt*amount)
+
+
+@register.filter(name='lookup')
+def lookup(obj: dict, key: str):
+    return obj[key]
+
+
+@register.filter(name='lookupprop')
+def lookupprop(obj: dict, key: str):
+    return getattr(obj, key)

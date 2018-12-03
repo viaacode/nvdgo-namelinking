@@ -1,0 +1,11 @@
+{% load app_filters %}
+<li>
+    {% if extra_value %}
+    <strong>{{ match|lookupprop:extra_value }}</strong>
+    {% endif %}
+    <span class="quality" style="--quality: {{ match.score }}"></span>
+    {{ match.name }} ({{ match.subtitle }}{% if match.died_age >= 0 %}, {{ match.died_age|floatformat:"0" }} y/o{% endif %})
+    <br />
+    hetarchief: <a href="{{ match.url }}" target="_blank">{{ match.pid }}</a>,
+    namenlijst: <a href="{{ match.nmlurl }}">{{ match.nmlid }}</a>
+</li>

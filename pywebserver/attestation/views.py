@@ -145,8 +145,17 @@ def stats(request, model=None, statname=None, format_=None):
             "statname": statname,
             "model": modelname,
             "format": format_,
-            "segments": (n for n in dir(obj) if n[:8] == 'segment_')
+            "segments": (n for n in dir(obj) if n[:8] == 'segment_'),
+            "highest_scores": obj._highest_scores(),
+            "young_deaths": obj._young_deaths(),
+            "old_deaths": obj._old_deaths(),
+            "segmented_deaths": dict()
         }
+
+        segments = ('born_country', 'died_country', 'victim_type_details', 'victim_type', 'gender')
+        for segment in segments:
+            context['segmented_deaths'][segment] = obj._segmented_deaths(segment)
+
         for funcname in (n for n in dir(obj) if n[:7] == '_stats_'):
             context[funcname[1:]] = getattr(obj, funcname)()
         return __render(request, 'stats.html', context)
