@@ -88,6 +88,5 @@ class Entities(models.Model):
 
 
 LinkNamenlijst = LinkSolr2
-
 LinkOld = Link
 

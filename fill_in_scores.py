@@ -25,10 +25,11 @@ if args.clear_log_file:
     open(args.log_file, 'w').close()
 
 logLevel = logging.DEBUG if args.debug else logging.WARNING
+logLevel = logging.WARNING
 logging.basicConfig(level=logLevel)
 logger = logging.getLogger()
+logger.setLevel(logLevel)
 fh = logging.FileHandler(args.log_file)
-# logger.addHandler(logging.StreamHandler(sys.stdout))
 logger.addHandler(fh)
 
 

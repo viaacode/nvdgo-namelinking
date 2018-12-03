@@ -189,6 +189,8 @@ class Rater:
                 add('ck', 'k')    # werviK <-> werviCK
                 add('ghe', 'ge')  # ledeghem <-> ledeGem
                 add('ll', 'lj')   # gefusiLLeerd <-> gefusiLJeerd
+                add('vam de', 'van de')  # "VAM de" <-> "VAN de"
+                add('van de', 'van de')
                 values.add(v.replace('adjoint', ''))
                 if v in Rater.possiblereplacements:
                     values.update(Rater.possiblereplacements[v])

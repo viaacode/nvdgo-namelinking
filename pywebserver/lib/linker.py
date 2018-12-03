@@ -78,7 +78,7 @@ class Linker:
         self.log.debug("Will write to %s '%s'" % (table, str(self.link)))
         self._solr = Solr(config['solr']['url'])
         self.db = create_engine(config['db']['connection_url'])
-        self.db.connect()
+        self.db = self.db.connect()
         # meta = MetaData(self.db)
         # meta.reflect()
         # self.table = meta.tables[config['db']['table_name']]
@@ -138,7 +138,7 @@ class Linker:
     @staticmethod
     def namesfilter(name):
         # filter out names that contain < or > to prevent checking the incomplete names like <...>eau
-        return '<' not in name and '>' not in name
+        return '<' not in name and '>' not in name and len(name.strip()) > 1
 
     def clear(self):
         with timeit('Clearing model %s' % self.link._meta.db_table):
@@ -209,34 +209,28 @@ class Linker:
 
         return results
 
-    def get_results(self, nmlid, firstnames, lastnames):
+    def get_results(self, nmlid, names):
         try:
-            if len(firstnames) == 0 or len(lastnames) == 0:
-                self.log.info('Empty first- or lastnames')
+            if not len(names):
+                self.log.info('Empty names list')
                 return set()
 
             results = set()
-
-            for fname in firstnames:
-                for lname in lastnames:
-                    self.log.debug('"%s" "%s"' % (fname, lname))
-
-            allnames = [fname + ' ' + lname for fname in firstnames for lname in lastnames]
-            # allnames.extend([
-            #                   lname + ' ' + fname
-            #                   for fname in firstnames
-            #                   for lname in lastnames
-            #                   if ' ' in lname or ' ' in fname  # optim: no need to check reverse order
-            #                                                    #  if only 2 words in total
-            #                 ])
-
-            allnames = sorted(allnames, key=len, reverse=True)
+            allnames = sorted(names, key=len, reverse=True)
             for names in allnames:
                 rows = self.get_links(names.split(' '))
                 if len(rows):
                     self.log.debug("%s, check: %s: %d results", nmlid, names, len(rows))
                     results = results.union(rows)
-            return results
+
+            # filter out doubles that exist with different names
+            results2 = set()
+            done = set()
+            for pid, name in results:
+                if pid not in done:
+                    done.add(pid)
+                    results2.add((pid, name))
+            return results2
         except Exception as e:
             self.log.exception(e)
             return set()
@@ -246,7 +240,7 @@ class Linker:
         if row[self.categorizer] not in self.counts:
             self.counts[row[self.categorizer]] = dict(skipped=0, ok=0, alternatives=0, found=0, skipped_too_freq=0)
 
-        if len(row['firstname']) <= 2 or len(row['lastname']) <= 2:
+        if len(row['firstname'].strip()) <= 1 or len(row['lastname'].strip()) <= 2:
             self.counts[row[self.categorizer]]['skipped'] += 1
             return
 
@@ -255,6 +249,7 @@ class Linker:
             return
 
         names = Conversions.get_names(row, Linker.namesfilter)
+
 
         # # use first first name and first 2 firstnames
         # fnames = []
@@ -270,15 +265,14 @@ class Linker:
         # remove single letter words such as 't' for eg. "edmond t kint de roodenbeke"
         # lastnames = set(' '.join((l for l in lastname.split(' ') if len(l) > 1)) for lastname in lastnames)
 
-        if len(names.firstnames_normalized) <= 1 or len(names.lastnames_normalized) <= 1:
+        if not len(names.variations_normalized):
             self.counts[row[self.categorizer]]['skipped'] += 1
         else:
             self.counts[row[self.categorizer]]['ok'] += 1
-            self.counts[row[self.categorizer]]['alternatives'] += len(names.firstnames_normalized) * \
-                                                                  len(names.lastnames_normalized) - 1
+            self.counts[row[self.categorizer]]['alternatives'] += len(names.variations_normalized)
 
         if not self.counts_only:
-            res = self.get_results(row['_id'], names.firstnames_normalized, names.lastnames_normalized)
+            res = self.get_results(row['_id'], names.variations_normalized)
             if len(res):
                 self.counts[row[self.categorizer]]['found'] += len(res)
                 self.process(res, row, idx)

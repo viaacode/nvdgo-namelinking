@@ -55,6 +55,12 @@ def run(*args):
     else:
         datasource = 'namenlijst'
 
+    table = [a for a in args if a.split(':')[0] == 'table']
+    if len(table):
+        table = table[0].split(':', 2)[1]
+    else:
+        table = datasource['table'] if 'table' in datasource else None
+
     logger.info("Using datasource '%s'" % datasource)
     datasource = Datasources[datasource]
 
@@ -67,7 +73,7 @@ def run(*args):
                      counts_only='counts' in args,
                      no_skips='no-skips' in args,
                      no_write='no-write' in args,
-                     table=datasource['table'] if 'table' in datasource else None,
+                     table=table,
                      only_skips='only-skips' in args)
 
     if linking.preset_list:
@@ -89,7 +95,7 @@ def run(*args):
 
     if 'clean' in args or not(any([a in args for a in ['debug-sql', 'debug', 'no-write', 'counts']])) and 'skip' not in extra_kwargs:
         msg = 'Clear table %s?' % linking.link._meta.db_table
-        if input("%s (y/N) " % msg).lower() == 'y':
+        if input("%s (y/N) " % msg).strip().lower() == 'y':
             linking.clear()
 
     linking.start(people, extra_kwargs['skip'] if 'skip' in extra_kwargs else 0)
