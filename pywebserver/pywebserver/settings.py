@@ -115,7 +115,7 @@ CACHES = {
         'LOCATION': '/tmp/pywebserver_cache/mediahaven',
         'TIMEOUT': 31536000,  # cache for a year
         'OPTIONS': {
-            'MAX_ENTRIES': 10000
+            'MAX_ENTRIES': 50000
         }
     },
     'stats': {
@@ -125,10 +125,10 @@ CACHES = {
         'OPTIONS': {
             'MAXENTRIES': 50,
         },
-        'VERSION': 9
+        'VERSION': 10
     }
 }
-#disable for a bit
+# disable for a bit
 # CACHES['stats']['BACKEND'] = 'django.core.cache.backends.dummy.DummyCache'
 
 log_screen = {
