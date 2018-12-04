@@ -1,11 +1,16 @@
 {% load app_filters %}
 <li>
+    <span class="quality" style="--quality: {{ match.score }}"></span>
     {% if extra_value %}
     <strong>{{ match|lookupprop:extra_value }}</strong>
     {% endif %}
-    <span class="quality" style="--quality: {{ match.score }}"></span>
     {{ match.name }} ({{ match.subtitle }}{% if match.died_age >= 0 %}, {{ match.died_age|floatformat:"0" }} y/o{% endif %})
+    <i>{{ match.status }}</i>
     <br />
     hetarchief: <a href="{{ match.url }}" target="_blank">{{ match.pid }}</a>,
-    namenlijst: <a href="{{ match.nmlurl }}">{{ match.nmlid }}</a>
+    namenlijst: <a href="{{ match.nmlurl }}" target="_blank">{{ match.nmlid }}</a><span class="noprint">,
+    {% with match.entity|replace:" :/" as namepart %}
+    <a href="{% url 'info' pid=match.pid nmlid=match.nmlid model=model words=namepart %}" target="_blank">🖋</a>
+    {% endwith %}
+    </span>
 </li>

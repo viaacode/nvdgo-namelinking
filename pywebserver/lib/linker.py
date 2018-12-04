@@ -10,11 +10,11 @@ from django.db import IntegrityError
 from pythonmodules.decorators import classcache
 from pythonmodules.config import Config
 from pythonmodules.cache import LocalCacher
+from django.db.utils import IntegrityError as UtilsIntegrityError
 
 from pysolr import Solr
 
 import attestation.models as models
-from more_itertools import chunked
 
 from pythonmodules.profiling import timeit
 
@@ -130,9 +130,17 @@ class Linker:
 
     def process(self, res, row, idx):
         nmlid = row['_id']
-        values = (self.link(nmlid=nmlid, pid=r[0].strip(), entity=' '.join(r[1:])) for r in res)
-        if not self.no_write:
-            self.link.objects.bulk_create(values)
+        bulk = False
+        if bulk:
+            values = (self.link(nmlid=nmlid, pid=r[0].strip(), entity=' '.join(r[1:])) for r in res)
+            if not self.no_write:
+                    self.link.objects.bulk_create(values)
+        else:
+            for r in res:
+                try:
+                    self.link.objects.create(nmlid=nmlid, pid=r[0].strip(), entity=' '.join(r[1:]))
+                except (IntegrityError, UtilsIntegrityError) as e:
+                    self.log.debug('%s %s', type(e), e)
         return
 
     @staticmethod
@@ -155,59 +163,6 @@ class Linker:
             return []
         name = ' '.join(names)
         return [(item['id'], name) for item in res.docs]
-
-    # @classcache
-    def get_links_old(self, names):
-        # conditions = []
-        #
-        # self.log.debug("Check %s" % str(names))
-        # conditions.append(self.table.c.entity == max(names, key=len))
-        #
-        # for name in names:
-        #     alias = self.table.alias()
-        #     # selects.append(alias)
-        #     conditions.append(self.table.c.doc_index.in_(
-        #         select([alias.c.doc_index]).where(alias.c.entity == name)
-        #     ))
-        #
-        # docids = select([self.table.c.doc_index]).where(and_(*conditions)).distinct()
-        # with timeit('slow pre-select for "%s"' % (' '.join(names)), 1000):
-        #     docids = [a[0] for a in self.db.execute(docids).fetchall()]
-        #
-        # if not len(docids):
-        #     return []
-        #
-        # print('docids: %d' % len(docids))
-        #
-        results = []
-        # for ids in chunked(docids, 100):
-        selects = [self.table.c.pid]
-        conditions = []
-        # conditions = [self.table.c.doc_index.in_(ids)]
-        joins = []
-        prevalias = None
-        alias = self.table
-
-        for name in names:
-            if prevalias is not None:
-                distances = [prevalias.c.index - i for i in range(1, self.max_distance)]
-                distances.extend([prevalias.c.index + i for i in range(1, self.max_distance)])
-                joins.append((alias, and_(self.table.c.doc_index == alias.c.doc_index, alias.c.index.in_(distances))))
-            selects.append(alias.c.entity_full)
-            conditions.append(alias.c.entity == name)
-            prevalias = alias
-            alias = self.table.alias()
-
-        with timeit('slow select for "%s"' % (' '.join(names)), 1000):
-            s = select(selects)
-            join = self.table
-            for x in joins:
-                join = join.join(*x)
-            s = s.select_from(join)
-            s = s.where(and_(*conditions))
-            results.extend([tuple(row) for row in self.db.execute(s).fetchall()])
-
-        return results
 
     def get_results(self, nmlid, names):
         try:
@@ -249,7 +204,6 @@ class Linker:
             return
 
         names = Conversions.get_names(row, Linker.namesfilter)
-
 
         # # use first first name and first 2 firstnames
         # fnames = []

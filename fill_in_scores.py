@@ -9,7 +9,6 @@ from pywebserver.lib.matcher import Rater, Meta
 import logging
 from pythonmodules.multithreading import multithreaded
 import json
-import sys
 
 parser = ArgumentParser(description='Add/fill in scores in link tables')
 parser.add_argument('--start', type=int, nargs='?', help='start from')
@@ -52,7 +51,7 @@ get_meta = Meta()
 
 @multithreaded(10, pre_start=True, pass_thread_id=False, pbar=tqdm(total=cur.rowcount))
 def process(row):
-    with timeit('PROCESS', min_time=3e3):
+    with timeit('PROCESS', min_time=1e4):
         try:
             id_, full_pid, external_id, entity, score, meta = row
             with timeit('Rater init', 1e3):
@@ -62,13 +61,14 @@ def process(row):
             if meta:
                 meta_old = json.loads(meta)
 
-            with timeit('meta', 2e3):
+            with timeit('meta', 8e3):
                 meta = get_meta(full_pid, external_id, entity, score, meta)
             new_rating = 0
-            with timeit('Rating', 2e3):
+            with timeit('Rating', 3e3):
                 try:
                     rating = rater.ratings()
                     meta['rating_breakdown'] = {k: rating.scores[k].rating for k in rating.scores}
+                    meta['rating_multiplier'] = rating.total_multiplier
                     new_rating = rating.total
                 except KeyError as e:
                     logger.warning(e)

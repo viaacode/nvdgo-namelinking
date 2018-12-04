@@ -56,6 +56,6 @@ def linkmodel_to_dict(model):
 @api.dispatcher.add_method
 def get_items(amount=1, model=None, order_by='?', request=None):
     model = views.get_model(model)
-    links = model.objects.filter(status=model.UNDEFINED).order_by(order_by)[0:amount]
+    links = model.objects.filter(status=model.UNDEFINED, score__level__lt=0.99).order_by(order_by)[0:amount]
     return list(map(linkmodel_to_dict, links))
 

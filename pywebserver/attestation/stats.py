@@ -43,7 +43,8 @@ class Stats:
         self.model = model
         self.db = DB(Config(section='db')['connection_url'])
         self.table = model._meta.db_table
-        self._cacher = WrapperCacher(get_cacher('stats'))
+        cacher = get_cacher('stats')
+        self._cacher = WrapperCacher(cacher, version=type(model))
         sns.set(font_scale=.8)
 
     @staticmethod
@@ -122,7 +123,7 @@ class Stats:
 
     @decorators.classcache
     def _usersegmentations(self):
-        fields = ('meta', 'nmlid', 'status', 'score')
+        fields = ('meta', 'nmlid', 'status', 'score', 'entity')
         q = 'SELECT %s FROM %s WHERE status != %d AND score > 0' % \
             (', '.join(fields), self.table, self.model.SKIP)
         res = self.db.execute(q)
@@ -136,6 +137,7 @@ class Stats:
             extra['status'] = status
             extra['score'] = min(row['score'], 1)
             extra['name'] = meta['name']
+            extra['entity'] = row['entity']
             extra['subtitle'] = meta['subtitle']
             extra['pid'] = meta['full_pid']
             splitpid = extra['pid'].split('_')

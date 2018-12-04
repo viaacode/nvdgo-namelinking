@@ -128,8 +128,9 @@ CACHES = {
         'VERSION': 10
     }
 }
+
 # disable for a bit
-# CACHES['stats']['BACKEND'] = 'django.core.cache.backends.dummy.DummyCache'
+# CACHES['stats'] = {'BACKEND':  'django.core.cache.backends.dummy.DummyCache'}
 
 log_screen = {
     'level': 'DEBUG',

@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 Score = namedtuple('Score', ('text', 'min_distance', 'match', 'distances'))
 Scores = namedtuple('Scores', ('amount', 'score', 'matches', 'rating', 'source'))
-Rating = namedtuple('Rating', ('scores', 'total'))
+Rating = namedtuple('Rating', ('scores', 'total', 'total_multiplier'))
 Lookup = namedtuple('Lookup', ('value', 'multiplier', 'alternate_spellings', 'max_distance'))
 
 
@@ -126,7 +126,7 @@ class Matcher:
                 min_distance = min(s.min_distance for s in score)
                 # dist_pct = (min_distance / (lookup.max_distance+1))*20
                 # rating = multiplier/((80*dist_pct)**1.2)
-                rating = multiplier/(3*(min_distance**1.1))
+                rating = multiplier/(3*(min_distance**0.60))
                 result[k] = Scores(amount,
                                    min_distance,
                                    set([str(s.match) for s in score]),
@@ -141,7 +141,7 @@ class Rater:
     possiblereplacements = dict(
         sergeant=set(['sergent']),
         soldat=set(['soldaat', 'soldier']),
-        kaporaal=set(['korporaal']),
+        kaporaal=set(['korporaal', 'caporal']),
         handelaar=set(['verkoper', 'marchand', "koopman"])
     )
 
@@ -191,6 +191,13 @@ class Rater:
                 add('ll', 'lj')   # gefusiLLeerd <-> gefusiLJeerd
                 add('vam de', 'van de')  # "VAM de" <-> "VAN de"
                 add('van de', 'van de')
+                add('aa', 'a')
+                add('ui', 'uy')   # bUIsingen <-> bUYsingen
+                add('z', 's')
+                add('niklaas', 'nikolaas')
+                add('chasseurs a pied', 'chass a pied')
+                add('regiment de', 'reg de')
+                add('linieregiment', 'liniereg')
                 values.add(v.replace('adjoint', ''))
                 if v in Rater.possiblereplacements:
                     values.update(Rater.possiblereplacements[v])
@@ -230,7 +237,7 @@ class Rater:
     @property
     def details(self):
         if self._details is None:
-            with timeit('nml', 1000):
+            with timeit('nml', 2e3):
                 self._details = Namenlijst().get_person_full(self.nmlid, self.language)
         return self._details
 
@@ -257,6 +264,7 @@ class Rater:
                         val = [re.sub(r"[0-9]+", "", v) for v in val]
 
                     val = list(filter(lambda v: len(Matcher.normalize(v)) >= min_size, val))
+                    val.extend(list(map(Matcher.normalize, val)))
 
                     if not len(val):
                         raise TypeError("too short")
@@ -389,11 +397,17 @@ class Rater:
                 addlookup(key, lambda: nml.events['enlisted'][key], min_size=4, allow_numeric=True)
 
             addlookup('died_place_locality', lambda: nml.died_place['locality'])
+            addlookup('died_place_name', lambda: nml.died_place['name'])
             addlookup('born_place_locality', lambda: nml.born_place['locality'])
+            addlookup('born_place_name', lambda: nml.born_place['name'])
+            addlookup('memorated_place_locality', lambda: nml.events['memorated.original']['place']['locality'])
+            addlookup('memorated_place_name', lambda: nml.events['memorated.original']['place']['name'])
 
             addlookup('homeaddress', lambda: homeaddress()['place']['name'])
 
-            adddatelookup('died_date', lambda: nml.died_date)
+            adddatelookup('died_date', lambda: nml.died_date, multiplier=2)
+            adddatelookup('born_date', lambda: nml.born_date, multiplier=2)
+            adddatelookup('memorated_date', lambda: nml.events['memorated.original']['start'], multiplier=2)
             addlookup('work_place_locality', lambda: nml.events['work']['place']['locality'], multiplier=0.5)
             addnumlookup('died_age', lambda: nml.died_age, max_distance=5, buffer=1, multiplier=0.5)
 
@@ -406,14 +420,16 @@ class Rater:
             names.add(self.name)
         matcher = Matcher(self.text, names)
         scores = matcher.scores(self.lookups)
+        m = len(scores)
 
         '''
         total_score = \sum_{}\frac{multiplier}{4\sqrt[5]{score^6}}
         '''
-        total = min(0.99, sum(scores[k].rating for k in scores))
-        if len(scores) == 1:
-            total /= 2
-        return Rating(scores, total)
+        total = sum(scores[k].rating for k in scores)
+        total_multiplier = .5 + (m / 5)
+        total *= total_multiplier
+        total = min(0.99, total)
+        return Rating(scores, total, total_multiplier)
 
 
 class Meta:
