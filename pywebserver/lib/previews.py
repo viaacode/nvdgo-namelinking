@@ -2,19 +2,10 @@ from pythonmodules.mediahaven import MediaHaven
 import io
 import base64
 from django.core.cache import caches
-from django.core.cache.backends.base import InvalidCacheBackendError
-from pythonmodules.cache import WrapperCacher
 from pythonmodules import decorators
 import logging
 
 logger = logging.getLogger('pythonmodules.previews')
-
-
-def get_cacher(name):
-    try:
-        return caches[name]
-    except InvalidCacheBackendError:
-        return caches['default']
 
 
 @decorators.log_call(logger=logger)
@@ -24,7 +15,7 @@ def get_info(pid, words=None, extra_previews=True):
         img.save(data, format='JPEG', quality=85)
         return base64.b64encode(data.getvalue()).decode()
 
-    mh = get_media_haven()
+    mh = MediaHaven()
     alto = mh.get_alto(pid)
     result = dict(
         pid=pid,
@@ -48,15 +39,5 @@ def get_info(pid, words=None, extra_previews=True):
 
 
 _instances = {}
-
-
-def get_media_haven():
-    global _instances
-    if 'MediaHaven' not in _instances:
-        cache = get_cacher('MediaHaven')
-        mh = MediaHaven('../config.ini')
-        mh.set_cacher(WrapperCacher(cache))
-        _instances['MediaHaven'] = mh
-    return _instances['MediaHaven']
 
 

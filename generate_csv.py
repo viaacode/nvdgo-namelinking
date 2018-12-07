@@ -53,7 +53,7 @@ cur = conn.cursor()
 with timeit('SELECT', 5000):
     q = "SELECT id, pid, nmlid, entity, score, meta " \
         "FROM %s " \
-        "WHERE status != 2 %s " \
+        "WHERE status != 2 AND status != 4 %s " \
         "ORDER BY pid ASC " % (args.table, where)
     if args.limit:
         q += ' LIMIT %d' % int(args.limit)

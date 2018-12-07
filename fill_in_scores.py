@@ -7,8 +7,11 @@ from pythonmodules.profiling import timeit
 from argparse import ArgumentParser
 from pywebserver.lib.matcher import Rater, Meta
 import logging
-from pythonmodules.multithreading import multithreaded
+from pythonmodules.multithreading import multithreaded, singlethreaded
+from pythonmodules.mediahaven import MediaHaven
+from pythonmodules.namenlijst import Namenlijst
 import json
+import re
 
 parser = ArgumentParser(description='Add/fill in scores in link tables')
 parser.add_argument('--start', type=int, nargs='?', help='start from')
@@ -38,8 +41,11 @@ conn2 = psycopg2.connect(config['connection_url'])
 cur = conn.cursor()
 with timeit('SELECT', 5000):
     where_clause = ('WHERE %s' % args.where) if args.where else ''
-    q = 'SELECT id, pid, nmlid, entity, score, meta FROM %s %s ORDER BY status DESC, score DESC, pid ASC'
-    q = q % (args.table, where_clause)
+    order_by = 'status DESC, pid ASC, id DESC'
+    order_by = 'nmlid DESC'
+    order_by = 'pid ASC'
+    q = 'SELECT id, pid, nmlid, entity, score, meta FROM %s %s ORDER BY %s'
+    q = q % (args.table, where_clause, order_by)
     if args.limit:
         q += ' LIMIT %d' % int(args.limit)
     if args.start:
@@ -48,12 +54,20 @@ with timeit('SELECT', 5000):
 
 get_meta = Meta()
 
+remove_double_spaces = re.compile('\s+')
+model_name = args.table.split('_')[-1]
 
-@multithreaded(10, pre_start=True, pass_thread_id=False, pbar=tqdm(total=cur.rowcount))
+MediaHaven
+Namenlijst
+
+
+#@multithreaded(10, pre_start=True, pass_thread_id=False, pbar=tqdm(total=cur.rowcount))
+@singlethreaded(pass_thread_id=False, pre_start=True, pbar=tqdm(total=cur.rowcount))
 def process(row):
     with timeit('PROCESS', min_time=1e4):
         try:
             id_, full_pid, external_id, entity, score, meta = row
+            entity = remove_double_spaces.sub(' ', entity)
             with timeit('Rater init', 1e3):
                 rater = Rater(full_pid, external_id, entity)
             cur_rating = score
@@ -83,8 +97,11 @@ def process(row):
                 cur2.close()
                 conn2.commit()
         except Exception as e:
-            url = 'http://do-tst-mke-01.do.viaa.be/attestation/info/model-namenlijst/%s/%s/%s' % \
-                  (full_pid, external_id, entity.replace(' ', '/'))
+            try:
+                url = 'http://do-tst-mke-01.do.viaa.be/attestation/info/model-%s/%s/%s/%s' % \
+                      (model_name, full_pid, external_id, entity.replace(' ', '/'))
+            except Exception as e2:
+                url = str(e2)
             logger.warning('exception for %s', url)
             logger.exception(e)
 

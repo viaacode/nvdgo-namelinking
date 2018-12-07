@@ -10,17 +10,8 @@ import logging
 import json
 from . import models
 import pythonmodules.decorators as decorators
-from django.core.cache.backends.base import InvalidCacheBackendError
-from pythonmodules.cache import WrapperCacher
+from pythonmodules.cache import OptimizedFileCacher
 import matplotlib
-
-
-def get_cacher(name):
-    from django.core.cache import caches
-    try:
-        return caches[name]
-    except InvalidCacheBackendError:
-        return caches['default']
 
 
 matplotlib.use('Agg')
@@ -43,8 +34,7 @@ class Stats:
         self.model = model
         self.db = DB(Config(section='db')['connection_url'])
         self.table = model._meta.db_table
-        cacher = get_cacher('stats')
-        self._cacher = WrapperCacher(cacher, version=type(model))
+        self._cacher = OptimizedFileCacher('/export/caches/stats_%s' % (self.table,), timeout=3600)
         sns.set(font_scale=.8)
 
     @staticmethod
@@ -84,11 +74,23 @@ class Stats:
 
     @decorators.classcache
     def _stats_matches(self):
-        fields = ('COUNT(DISTINCT pid)', 'COUNT(DISTINCT nmlid)', 'SUM(CEIL(score))', 'COUNT(*)', 'SUM(score)')
-        fieldnames = ('Amount of newspaper pages with matches', 'Amount of IFFM names with matches',
-                      'Amount of matches with a score > 0', 'Total amount of matches',
-                      'Average score',
-                      '% of matches with score > 0')
+        fields = (
+            'COUNT(DISTINCT pid)',
+            'COUNT(DISTINCT nmlid)',
+            'SUM(CEIL(score))',
+            'COUNT(*)',
+            'COUNT(status = 4 OR NULL)',
+            'SUM(score)'
+        )
+        fieldnames = (
+            'Amount of newspaper pages with matches',
+            'Amount of IFFM names with matches',
+            'Amount of matches with a score > 0',
+            'Total amount of matches',
+            'Matches skipped',
+            'Average score',
+            '% of matches with score > 0'
+        )
         res = self.db.execute('SELECT %s FROM %s' % (', '.join(fields), self.table))
         res = list(map(int, res.fetchone()))
         res[-1] = '%.2f%%' % (res[-1]/res[2] * 100)
@@ -121,11 +123,15 @@ class Stats:
         plt.close(fig=fig)
         return HttpResponse(io.getvalue(), content_type=content_type)
 
+    def get_user_segmentations(self):
+        res = self._usersegmentations()
+        return dict(extra=res['extra'].copy(), ratings=res['ratings'].copy())
+
     @decorators.classcache
     def _usersegmentations(self):
         fields = ('meta', 'nmlid', 'status', 'score', 'entity')
-        q = 'SELECT %s FROM %s WHERE status != %d AND score > 0' % \
-            (', '.join(fields), self.table, self.model.SKIP)
+        q = 'SELECT %s FROM %s WHERE score > 0' % \
+            (', '.join(fields), self.table)
         res = self.db.execute(q)
         data = []
         data_fields = []
@@ -177,7 +183,7 @@ class Stats:
         return fig
 
     def scores_data_counts(self):
-        stats = self._usersegmentations()
+        stats = self.get_user_segmentations()
 
         fig = plt.figure(figsize=(9, 4))
         ax = fig.gca()
@@ -191,7 +197,7 @@ class Stats:
     def scores_kde1(self, lim=None):
         if lim is None:
             lim = (0, .10)
-        stats = self._usersegmentations()
+        stats = self.get_user_segmentations()
         scores = stats['extra'].score
         scores = scores[(scores > lim[0]) & (scores <= lim[1])]
 
@@ -221,7 +227,7 @@ class Stats:
         return self.scores_kde1((.50, 1))
 
     def scores_status_impact(self):
-        stats = self._usersegmentations()
+        stats = self.get_user_segmentations()
         stats = stats['ratings']
         stats = stats[stats.status != self.model.status_id_to_text(self.model.UNDEFINED)]
 
@@ -234,7 +240,7 @@ class Stats:
         return fig
 
     def scores_field_impact(self):
-        stats = self._usersegmentations()
+        stats = self.get_user_segmentations()
 
         fig = plt.figure(figsize=(6, 9))
         ax = fig.gca()
@@ -252,7 +258,7 @@ class Stats:
         if kind is None:
             kind = 'born_country'
 
-        stats = self._usersegmentations()
+        stats = self.get_user_segmentations()
         stats = stats['extra']
 
         fig = plt.figure(figsize=(9, 4))
@@ -283,18 +289,20 @@ class Stats:
         return self._segmentations('born_country')
 
     def segment_died_age(self):
-        stats = self._usersegmentations()
+        stats = self.get_user_segmentations()
         stats = stats['extra']
         totlen = len(stats)
-        stats = stats[(~stats['died_age'].isnull()) & (stats['died_age'] < 200)]
+        stats = stats[stats['died_age'].notnull()]
+        stats = stats[stats['died_age'] < 200]
+        stats = stats[stats['died_age'] >= 0]
+        # stats = stats.head(10000)
         newlen = len(stats)
-        # stats.loc[stats.died_age is]
 
         fig = plt.figure(figsize=(9, 4))
         ax = fig.gca()
 
         ax.set_xlim((0, stats.died_age.max()))
-        ax = sns.distplot(stats.died_age, hist=True, kde=True, ax=ax)
+        ax = sns.distplot(stats.died_age, ax=ax)
         self.ticklabels_to_pct(ax, 'y')
         ax.set_title('Died age distribution\n(%d/%s with no valid age)' % (totlen - newlen, totlen))
         return fig
@@ -303,7 +311,7 @@ class Stats:
         if kind is None:
             kind = 'swarm'
         kind = '%splot' % (kind,)
-        stats = self._usersegmentations()
+        stats = self.get_user_segmentations()
         stats = stats['ratings']
         stats = stats[stats.status != self.model.status_id_to_text(self.model.UNDEFINED)]
 
@@ -321,39 +329,58 @@ class Stats:
     def violin_scores_status(self):
         return self.swarm_scores_status('violin')
 
-    def _highest_scores(self):
-        stats = self._usersegmentations()
+    def filter_status(self, df, has_score=None):
         nomatch = self.model.status_id_to_text(self.model.NO_MATCH)
-        stats = stats['extra']
-        stats = stats[stats.status != nomatch]
+        skips = self.model.status_id_to_text(self.model.SKIP)
+        df = df[df.status != nomatch]
+        df = df[df.status != skips]
+        if has_score is True:
+            df = df[df.score > 0]
+        return df
+
+    def _highest_scores(self):
+        stats = self.get_user_segmentations()
+        stats = self.filter_status(stats['extra'])
         return stats.nlargest(20, columns='score')
 
-    def _young_deaths(self):
-        stats = self._usersegmentations()
+    def _most_common_names(self):
+        stats = self.get_user_segmentations()
+        stats = self.filter_status(stats['extra'])
+        top = stats.groupby('nmlid').size().nlargest(20).index.tolist()
+        stats = stats[stats.nmlid.isin(top)].groupby('nmlid')
+        stats = stats.apply(lambda x: x.sort_values('score', ascending=False))
+        return stats.groupby('nmlid').head(1)
+
+    def _skipped_names(self):
+        skips = self.model.status_id_to_text(self.model.SKIP)
+
+        stats = self.get_user_segmentations()
         stats = stats['extra']
-        nomatch = self.model.status_id_to_text(self.model.NO_MATCH)
-        stats = stats[stats.status != nomatch]
-        stats = stats[stats.score > 0]
+        stats = stats[stats.status == skips]
+
+        # stats = stats[stats.score > 0]
+        top = stats.groupby('name').size().nlargest(20).index.tolist()
+        stats = stats[stats.name.isin(top)].groupby('name')
+        stats = stats.apply(lambda x: x.sort_values('score', ascending=False))
+        return stats.groupby('name').head(1)
+
+    def _young_deaths(self):
+        stats = self.get_user_segmentations()
+        stats = self.filter_status(stats['extra'], True)
         stats = stats[stats.died_age.notnull()]
         stats = stats[stats.died_age <= 8]
         return stats.nlargest(10, columns='score')
 
     def _old_deaths(self):
-        stats = self._usersegmentations()
-        stats = stats['extra']
-        nomatch = self.model.status_id_to_text(self.model.NO_MATCH)
-        stats = stats[stats.status != nomatch]
-        stats = stats[stats.score > 0]
+        stats = self.get_user_segmentations()
+        stats = self.filter_status(stats['extra'], True)
         stats = stats[stats.died_age.notnull()]
         stats = stats[stats.died_age > 75]
         return stats.nlargest(10, columns='score')
 
     def _segmented_deaths(self, segment):
-        stats = self._usersegmentations()
-        stats = stats['extra']
-        nomatch = self.model.status_id_to_text(self.model.NO_MATCH)
-        stats = stats[stats.status != nomatch]
-        stats = stats[stats.score > 0]
+        stats = self.get_user_segmentations()
+        stats = self.filter_status(stats['extra'], True)
         # stats = stats[stats[segment].notnull()]
         stats = stats.sort_values('score', ascending=False).groupby(segment)
         amount = 1 if len(stats) > 8 else 3

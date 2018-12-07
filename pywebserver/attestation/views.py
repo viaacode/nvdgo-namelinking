@@ -149,7 +149,9 @@ def stats(request, model=None, statname=None, format_=None):
             "highest_scores": obj._highest_scores(),
             "young_deaths": obj._young_deaths(),
             "old_deaths": obj._old_deaths(),
-            "segmented_deaths": dict()
+            "segmented_deaths": dict(),
+            "most_common_names": obj._most_common_names(),
+            "skipped_names": obj._skipped_names(),
         }
 
         segments = ('born_country', 'died_country', 'victim_type_details', 'victim_type', 'gender')

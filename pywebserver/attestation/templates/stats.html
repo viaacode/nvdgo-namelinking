@@ -143,6 +143,30 @@
         </ul>
     </section>
 
+    <h3>Most common names</h3>
+    <section>
+        <ul>
+        {% for match in most_common_names.itertuples %}
+            {% include "match.html" %}
+        {% endfor %}
+        </ul>
+    </section>
+
+    <h3>Skipped names</h3>
+    <section>
+        <p>
+            These matches have been manually skipped, usually because the person is well-known and does not correspond
+            to the person with the same name in the IFFM Namenlijst (eg. the French War Minister, a famous cyclist,
+            etc.).
+        </p>
+        <ul>
+        {% for match in skipped_names.itertuples %}
+            {% include "match.html" %}
+        {% endfor %}
+        </ul>
+    </section>
+
+
     {% for segment_name, segmentdata in segmented_deaths.items %}
     <h3>Highest rated deaths per {{ segment_name }}</h3>
     <section>
