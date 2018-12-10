@@ -13,12 +13,13 @@
     <i>{{ match.status }}</i>
 
     <br />
-
     hetarchief:
     <a href="{{ match.url }}" target="_blank">
         <span class="printonly">{{ match.url }}</span>
         <span class="noprint">{{ match.pid }}</span>
-    </a>,
+    </a><span class="noprint">,</span>
+    
+    <span class="printonly"><br /></span>
     namenlijst:
     <a href="{{ match.nmlurl }}" target="_blank">
         <span class="printonly">{{ match.nmlurl }}</span>
