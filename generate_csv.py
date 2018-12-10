@@ -15,7 +15,7 @@ import json
 
 parser = ArgumentParser(description='Generates the export csv')
 parser.add_argument('--start', type=int, nargs='?', help='start from')
-parser.add_argument('--table', help='Origin table', default='attestation_linksolr2')
+parser.add_argument('--table', help='Origin table', default='attestation_linksolr')
 parser.add_argument('--limit', type=int, help='limit amount done')
 parser.add_argument('--clear-log-file', default=False, action='store_true', help='Empty the log file first')
 parser.add_argument('--log-file', type=str, default='generate_csv.log', help='Set log file name')
@@ -53,7 +53,7 @@ cur = conn.cursor()
 with timeit('SELECT', 5000):
     q = "SELECT id, pid, nmlid, entity, score, meta " \
         "FROM %s " \
-        "WHERE status != 2 AND status != 4 %s " \
+        "WHERE status != 2 AND status != 4 AND score > 0 %s " \
         "ORDER BY pid ASC " % (args.table, where)
     if args.limit:
         q += ' LIMIT %d' % int(args.limit)

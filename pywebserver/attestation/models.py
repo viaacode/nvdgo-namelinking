@@ -87,6 +87,6 @@ class Entities(models.Model):
         # abstract = True
 
 
-LinkNamenlijst = LinkSolr2
+LinkNamenlijst = LinkSolr
 LinkOld = Link
 

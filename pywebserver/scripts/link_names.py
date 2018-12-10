@@ -12,6 +12,7 @@ def run(*args):
     log_file_handler = logging.FileHandler('link_names.log')
     logger.addHandler(log_file_handler)
     timeit.logger.addHandler(log_file_handler)
+
     logger.info('running with arguments: %s', args)
 
     if 'counts' in args:
@@ -55,14 +56,15 @@ def run(*args):
     else:
         datasource = 'namenlijst'
 
+    datasource_name = datasource
+    logger.info("Using datasource '%s'" % (datasource))
+    datasource = Datasources[datasource]
+
     table = [a for a in args if a.split(':')[0] == 'table']
     if len(table):
         table = table[0].split(':', 2)[1]
     else:
         table = datasource['table'] if 'table' in datasource else None
-
-    logger.info("Using datasource '%s'" % datasource)
-    datasource = Datasources[datasource]
 
     extra_kwargs = {}
     if len(args) and args[0].isdigit():
@@ -93,10 +95,12 @@ def run(*args):
         logger.info('will show some sql debug info')
         logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
 
-    if 'clean' in args or not(any([a in args for a in ['debug-sql', 'debug', 'no-write', 'counts']])) and 'skip' not in extra_kwargs:
-        msg = 'Clear table %s?' % linking.link._meta.db_table
+    if 'clean' in args:
+        msg = 'Clear table %s %s?' % (table, linking.link._meta.db_table)
         if input("%s (y/N) " % msg).strip().lower() == 'y':
             linking.clear()
+    else:
+        logger.info('Will write to %s %s' % (table, linking.link._meta.db_table))
 
     linking.start(people, extra_kwargs['skip'] if 'skip' in extra_kwargs else 0)
     logger.info(linking.counts)

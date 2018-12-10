@@ -41,6 +41,12 @@ class AttributeMapper(dict):
         except KeyError:
             raise AttributeError
 
+    def __contains__(self, k):
+        if k in self.map:
+            k = self.map[k]
+
+        return k in self.obj
+
     def __str__(self):
         return '%s.%s(%s) <%s>' % (__name__, 'AttributeMapper', str(self.map), str(self.obj))
 

@@ -15,7 +15,7 @@ import re
 
 parser = ArgumentParser(description='Add/fill in scores in link tables')
 parser.add_argument('--start', type=int, nargs='?', help='start from')
-parser.add_argument('--table', help='Origin table', default='attestation_linksolr2')
+parser.add_argument('--table', help='Origin table', default='attestation_linksolr')
 parser.add_argument('--limit', type=int, help='limit amount done')
 parser.add_argument('--clear-log-file', default=False, action='store_true', help='Empty the log file first')
 parser.add_argument('--log-file', type=str, default='fill_in_scores.log', help='Set log file name')

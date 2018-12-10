@@ -229,9 +229,9 @@ class Stats:
     def scores_status_impact(self):
         stats = self.get_user_segmentations()
         stats = stats['ratings']
-        stats = stats[stats.status != self.model.status_id_to_text(self.model.UNDEFINED)]
+        stats = stats[~stats.status.isin(map(self.model.status_id_to_text, (self.model.UNDEFINED, self.model.SKIP)))]
 
-        fig = plt.figure(figsize=(6, 9))
+        fig = plt.figure(figsize=(6, 11))
         ax = fig.gca()
         ax = sns.swarmplot(data=stats, x='score', y='field', hue='status', figure=fig, ax=ax, size=3)
         ax.set_title('Partial scores per field\n(for manually attested items)')

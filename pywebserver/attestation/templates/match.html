@@ -4,11 +4,28 @@
     {% if extra_value %}
     <strong>{{ match|lookupprop:extra_value }}</strong>
     {% endif %}
-    {{ match.name }} ({{ match.subtitle }}{% if match.died_age >= 0 %}, {{ match.died_age|floatformat:"0" }} y/o{% endif %})
+
+    {{ match.name }}
+
+    {% if match.subtitle %}
+        ({{ match.subtitle }}{% if match.died_age >= 0 %}, {{ match.died_age|floatformat:"0" }} y/o{% endif %})
+    {% endif%}
     <i>{{ match.status }}</i>
+
     <br />
-    hetarchief: <a href="{{ match.url }}" target="_blank">{{ match.pid }}</a>,
-    namenlijst: <a href="{{ match.nmlurl }}" target="_blank">{{ match.nmlid }}</a><span class="noprint">,
+
+    hetarchief:
+    <a href="{{ match.url }}" target="_blank">
+        <span class="printonly">{{ match.url }}</span>
+        <span class="noprint">{{ match.pid }}</span>
+    </a>,
+    namenlijst:
+    <a href="{{ match.nmlurl }}" target="_blank">
+        <span class="printonly">{{ match.nmlurl }}</span>
+        <span class="noprint">{{ match.nmlid }}</span>
+    </a>
+
+    <span class="noprint">,
     {% with match.entity|replace:" :/" as namepart %}
     <a href="{% url 'info' pid=match.pid nmlid=match.nmlid model=model words=namepart %}" target="_blank">🖋</a>
     {% endwith %}
