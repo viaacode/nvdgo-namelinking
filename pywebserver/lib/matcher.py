@@ -237,8 +237,7 @@ class Rater:
     @property
     def details(self):
         if self._details is None:
-            with timeit('nml', 2e3):
-                self._details = Namenlijst().get_person_full(self.nmlid, self.language)
+            self._details = Namenlijst().get_person_full(self.nmlid, self.language)
         return self._details
 
     @property
@@ -499,23 +498,21 @@ class Meta:
             meta['subtitle'] = subtitle
 
         if notexists('zoom', 'highlight', 'coords_correctionfactor'):
-            with timeit('alto search', 1000):
-                with timeit('alto_get %s' % full_pid):
-                    alto = mh.get_alto(full_pid)
-                search_res = alto.search_words([entity.split(' ')])
-                extent_textblock = search_res['extent_textblocks']
-                extents_highlight = [word['extent'] for word in search_res['words']]
+            alto = mh.get_alto(full_pid)
+            search_res = alto.search_words([entity.split(' ')])
+            extent_textblock = search_res['extent_textblocks']
+            extents_highlight = [word['extent'] for word in search_res['words']]
 
-                if search_res['correction_factor'] != 1:
-                    for word in extents_highlight:
-                        word.scale(search_res['correction_factor'], inplace=True)
-                    extent_textblock.scale(search_res['correction_factor'], inplace=True)
+            if search_res['correction_factor'] != 1:
+                for word in extents_highlight:
+                    word.scale(search_res['correction_factor'], inplace=True)
+                extent_textblock.scale(search_res['correction_factor'], inplace=True)
 
-                extent_textblock = extent_textblock.as_coords()
-                extents_highlight = [extent.as_coords() for extent in extents_highlight]
+            extent_textblock = extent_textblock.as_coords()
+            extents_highlight = [extent.as_coords() for extent in extents_highlight]
 
-                meta["zoom"] = extent_textblock
-                meta["highlight"] = extents_highlight
-                meta["coords_correctionfactor"] = search_res['correction_factor']
+            meta["zoom"] = extent_textblock
+            meta["highlight"] = extents_highlight
+            meta["coords_correctionfactor"] = search_res['correction_factor']
 
         return meta
