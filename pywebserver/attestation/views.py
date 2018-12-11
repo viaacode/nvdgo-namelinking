@@ -10,7 +10,7 @@ from lib.dubbels import get_all_for_pid
 from django.http import Http404
 import seaborn as sns
 from django.views.decorators.cache import cache_page
-
+from django.conf import settings
 
 import matplotlib
 matplotlib.use('Agg')
@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 import pathlib
 
 DEFAULT_MODEL = 'namenlijst'
-
+SKIPS = settings.SKIPS
 
 def get_model(model=None) -> models.LinkBase:
     if model is None:
@@ -152,6 +152,7 @@ def stats(request, model=None, statname=None, format_=None):
             "segmented_deaths": dict(),
             "most_common_names": obj._most_common_names(),
             "skipped_names": obj._skipped_names(),
+            "skips": SKIPS,
         }
 
         segments = ('born_country', 'died_country', 'victim_type_details', 'victim_type', 'gender')

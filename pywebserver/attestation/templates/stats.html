@@ -23,8 +23,10 @@
        h1, h2, h3, h4, h5, h6 { margin-top: 60px; 'Proxima Nova Soft', 'Helvetica Neue', sans-serif; }
        h2 { color: #900C3F; }
        h3 { color: #FF5733; }
-       ul { list-style-type: none; }
+       ul { list-style-type: none; padding-inline-start: 5px; }
        li { margin-bottom: 1em; }
+       ul.list { list-style-type: square; padding-inline-start: 25px; }
+       ul.list li { margin-bottom: 2px; }
        a, a:link, a:visited, a:hover { color: 0E0C90; font-style: italic; text-decoration: none; }
        body { -webkit-print-color-adjust: exact !important; color-adjust: exact; }
        @media print {
@@ -163,9 +165,18 @@
             to the person with the same name in the IFFM Namenlijst (eg. the French War Minister, a famous cyclist,
             etc.).
         </p>
+        <p>
+            Current list of automatically skipped names:
+            <ul class="list">
+            {% for skip in skips %}
+                <li>{{ skip }}</li>
+            {% endfor %}
+            </ul>
+        </p>
+
         <ul>
         {% for match in skipped_names.itertuples %}
-            {% include "match.html" %}
+            {% include "match.html" with no_status=True %}
         {% endfor %}
         </ul>
     </section>

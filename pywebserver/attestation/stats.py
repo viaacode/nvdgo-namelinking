@@ -97,6 +97,7 @@ class Stats:
         res.append('%.2f%%' % (res[2]/res[3] * 100,))
         return OrderedDict(zip(fieldnames, res))
 
+    @decorators.classcache
     def _stats_attestation(self):
         model = self.model
         data = model.objects.all().values('status').annotate(total=Count('status'))
@@ -260,7 +261,7 @@ class Stats:
 
         stats = self.get_user_segmentations()
         stats = stats['extra']
-
+        stats = stats.groupby('nmlid').first()
         fig = plt.figure(figsize=(9, 4))
         ax = fig.gca()
         value_counts = getattr(stats, kind).value_counts()
@@ -291,6 +292,7 @@ class Stats:
     def segment_died_age(self):
         stats = self.get_user_segmentations()
         stats = stats['extra']
+        stats = stats.groupby('nmlid').first()
         totlen = len(stats)
         stats = stats[stats['died_age'].notnull()]
         stats = stats[stats['died_age'] < 200]
@@ -332,8 +334,7 @@ class Stats:
     def filter_status(self, df, has_score=None):
         nomatch = self.model.status_id_to_text(self.model.NO_MATCH)
         skips = self.model.status_id_to_text(self.model.SKIP)
-        df = df[df.status != nomatch]
-        df = df[df.status != skips]
+        df = df[~df.status.isin([nomatch, skips])]
         if has_score is True:
             df = df[df.score > 0]
         return df
@@ -345,7 +346,9 @@ class Stats:
 
     def _most_common_names(self):
         stats = self.get_user_segmentations()
-        stats = self.filter_status(stats['extra'])
+        # stats = self.filter_status(stats['extra'])
+        stats = stats['extra']
+        stats = stats[stats.status != self.model.status_id_to_text(self.model.SKIP)]
         top = stats.groupby('nmlid').size().nlargest(20).index.tolist()
         stats = stats[stats.nmlid.isin(top)].groupby('nmlid')
         stats = stats.apply(lambda x: x.sort_values('score', ascending=False))

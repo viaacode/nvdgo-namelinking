@@ -10,7 +10,10 @@
     {% if match.subtitle %}
         ({{ match.subtitle }}{% if match.died_age >= 0 %}, {{ match.died_age|floatformat:"0" }} y/o{% endif %})
     {% endif%}
+
+    {% if not no_status %}
     <i>{{ match.status }}</i>
+    {% endif %}
 
     <br />
     hetarchief:

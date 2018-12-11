@@ -231,3 +231,19 @@ USE_L10N = True
 USE_TZ = True
 
 
+likes = (
+    'prince %',
+    'king %',
+    'nn nn',
+    'albert thomas',
+    'lloyd george',
+    'george lloyd',
+    'buysse marcel',
+    'marcel buysse',
+    'victor hugo',
+    '% street',
+)
+
+SKIPS = list(map(lambda x: "entity like '%s'" % (x,), likes))
+
+del likes
