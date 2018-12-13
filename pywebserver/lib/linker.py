@@ -134,11 +134,12 @@ class Linker:
         if bulk:
             values = (self.link(nmlid=nmlid, pid=r[0].strip(), entity=' '.join(r[1:])) for r in res)
             if not self.no_write:
-                    self.link.objects.bulk_create(values)
+                self.link.objects.bulk_create(values)
         else:
             for r in res:
                 try:
-                    self.link.objects.create(nmlid=nmlid, pid=r[0].strip(), entity=' '.join(r[1:]))
+                    if not self.no_write:
+                        self.link.objects.create(nmlid=nmlid, pid=r[0].strip(), entity=' '.join(r[1:]))
                 except (IntegrityError, UtilsIntegrityError) as e:
                     self.log.debug('%s %s', type(e), e)
         return

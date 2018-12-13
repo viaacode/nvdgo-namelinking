@@ -1,5 +1,6 @@
 {% load static %}
 {% load compile_static %}
+{% load app_filters %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -9,7 +10,7 @@
    <link href="{% static "css/quality.less"|compile %}" rel="stylesheet" type="text/css" />
    <style type="text/css">
        section { overflow:auto; width: 100%; }
-       img { page-break-inside: avoid; page-break-before: auto; page-break-after: auto; max-height: 95%; max-width: 95%;}
+       img { max-height: 95%; max-width: 95%;}
        img.graph { margin: 5px 20px 5px 5px; padding 5px;  }
        img.graph, dl { box-shadow: 0 0 5px black; margin: 5px 20px 5px 5px; vertical-align: top; }
        dl { padding: 10px; width: fit-content; display: grid; grid-template-columns: max-content auto; }
@@ -31,6 +32,8 @@
        body { -webkit-print-color-adjust: exact !important; color-adjust: exact; }
        @media print {
         .noprint { display:none; }
+        img { max-width: 100%; max-height: 80%; page-break-inside: avoid; page-break-before: auto;
+              page-break-after: auto; }
        }
        @media screen {
         .printonly { display:none; }
@@ -153,30 +156,30 @@
     <section>
         <ul>
         {% for match in most_common_names.itertuples %}
-            {% include "match.html" %}
+            {% include "match.html" with extra_value="entity_count" %}
         {% endfor %}
         </ul>
     </section>
 
-    <h3>Skipped names</h3>
+    <h3>Skipped names ({{ skipped_count }} in total)</h3>
     <section>
         <p>
             These matches have been manually skipped, usually because the person is well-known and does not correspond
-            to the person with the same name in the IFFM Namenlijst (eg. the French War Minister, a famous cyclist,
-            etc.).
+            to the person with the same name in the IFFM Namenlijst (eg. the French War Minister, a famous cyclist, a
+            street name, writer, etc.).
         </p>
         <p>
             Current list of automatically skipped names:
             <ul class="list">
             {% for skip in skips %}
-                <li>{{ skip }}</li>
+                <li><strong>{{ skip.count }}x</strong> {{ skip.name|replace:"%:..." }}</li>
             {% endfor %}
             </ul>
         </p>
 
         <ul>
         {% for match in skipped_names.itertuples %}
-            {% include "match.html" with no_status=True %}
+            {% include "match.html" with no_status=True extra_value="entity_count" %}
         {% endfor %}
         </ul>
     </section>

@@ -231,10 +231,9 @@ USE_L10N = True
 USE_TZ = True
 
 
-likes = (
+SKIPS_LIKES = [
     'prince %',
     'king %',
-    'nn nn',
     'albert thomas',
     'lloyd george',
     'george lloyd',
@@ -242,8 +241,13 @@ likes = (
     'marcel buysse',
     'victor hugo',
     '% street',
-)
+    'richard wagner',
+    'kaiser wilhelm',
+]
 
-SKIPS = list(map(lambda x: "entity like '%s'" % (x,), likes))
+double_names = ['herman', 'robert', 'nn', 'martin', 'voltaire', 'maurice', 'pierre', 'armand', 'henri',
+                'paul', 'michel']
+for name in double_names:
+    SKIPS_LIKES.append('%s %s' % (name, name))
 
-del likes
+SKIPS = list(map(lambda x: "entity like '%s'" % (x,), SKIPS_LIKES))

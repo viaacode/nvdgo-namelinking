@@ -135,7 +135,7 @@ def json_(obj, autoescape=False, serializer=_serialize):
 @register.filter(name='replace')
 def replace_(txt: str, args: str):
     search, replace = args.split(':', 1)
-    return txt.replace(search, replace)
+    return str(txt).replace(search, replace)
 
 
 @register.filter(name='pct')

@@ -18,7 +18,8 @@ import matplotlib.pyplot as plt
 import pathlib
 
 DEFAULT_MODEL = 'namenlijst'
-SKIPS = settings.SKIPS
+SKIPS = settings.SKIPS_LIKES
+
 
 def get_model(model=None) -> models.LinkBase:
     if model is None:
@@ -141,6 +142,14 @@ def stats(request, model=None, statname=None, format_=None):
     modelname = model.__name__[4:].lower()
 
     if statname is None:
+        skipped = obj._skipped_names_items()
+        skips = [{
+            "name": k,
+            "count": len(skipped[skipped.entity.str.match('^%s$' % k.replace('%', '.*'))])
+        } for k in SKIPS]
+
+        skips = sorted(skips, key=lambda x: x['count'], reverse=True)
+
         context = {
             "statname": statname,
             "model": modelname,
@@ -152,7 +161,8 @@ def stats(request, model=None, statname=None, format_=None):
             "segmented_deaths": dict(),
             "most_common_names": obj._most_common_names(),
             "skipped_names": obj._skipped_names(),
-            "skips": SKIPS,
+            "skips": skips,
+            'skipped_count': len(skipped),
         }
 
         segments = ('born_country', 'died_country', 'victim_type_details', 'victim_type', 'gender')

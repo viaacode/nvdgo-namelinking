@@ -35,7 +35,8 @@ fh = logging.FileHandler(args.log_file)
 logger.addHandler(fh)
 
 table = args.table
-wheres = args.where
+wheres = args.where if args.where else '1'
+wheres += ' AND status != 4 '  # skip skips
 
 config = Config(section='db')
 conn = psycopg2.connect(config['connection_url'])
@@ -43,14 +44,17 @@ conn2 = psycopg2.connect(config['connection_url'])
 cur = conn.cursor()
 
 with timeit('SELECT', 5000):
-    where_clause = ('WHERE %s' % wheres) if wheres else ''
-    order_by = 'status DESC, pid ASC, id DESC'
-    order_by = 'nmlid DESC'
-    order_by = 'pid ASC'
-    q = 'SELECT DISTINCT(pid) FROM %s %s'
-    q += ' GROUP BY pid'
-    q += ' ORDER BY %s' % (order_by,)
-    q = q % (table, where_clause)
+    q = '''
+        SELECT 
+            pid, 
+            COUNT(*) as row_count 
+        FROM %s 
+        WHERE %s 
+        GROUP BY pid 
+        ORDER BY row_count DESC
+'''
+
+    q = q % (table, wheres)
     if args.limit:
         q += ' LIMIT %d' % int(args.limit)
     if args.start:
@@ -63,7 +67,7 @@ remove_double_spaces = re.compile('\\s+')
 model_name = args.table.split('_')[-1]
 
 query = 'SELECT id, pid, nmlid, entity, score, meta FROM %s WHERE %s AND pid = %%s ORDER BY id ASC' % \
-        (table, wheres if wheres else '1')
+        (table, wheres)
 
 
 @multithreaded(10, pre_start=True, pass_thread_id=False, pbar=tqdm(total=cur.rowcount))
@@ -72,7 +76,7 @@ def process(row):
 
     with conn2.cursor() as cur3:
         cur3.execute(query, (pid,))
-        for row in cur3:
+        for row in tqdm(cur3, total=cur3.rowcount, desc=pid):
             try:
                 process_pid(row)
             except Exception as e:

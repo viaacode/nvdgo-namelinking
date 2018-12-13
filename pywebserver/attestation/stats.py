@@ -1,7 +1,7 @@
 from django.db.models import Count
 from django.http.response import HttpResponse
 from io import BytesIO
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 from pythonmodules.config import Config
 import pandas as pd
 from pythonmodules.db import DB
@@ -126,47 +126,63 @@ class Stats:
 
     def get_user_segmentations(self):
         res = self._usersegmentations()
-        return dict(extra=res['extra'].copy(), ratings=res['ratings'].copy())
+        return dict(extra=res['extra'].copy(), ratings=res['ratings'].copy(), skips=res['skips'].copy())
 
     @decorators.classcache
     def _usersegmentations(self):
-        fields = ('meta', 'nmlid', 'status', 'score', 'entity')
-        q = 'SELECT %s FROM %s WHERE score > 0' % \
+        fields = ('meta', 'pid', 'nmlid', 'status', 'score', 'entity')
+        q = 'SELECT %s FROM %s WHERE (score > 0 OR status=4)' % \
             (', '.join(fields), self.table)
         res = self.db.execute(q)
         data = []
         data_fields = []
+        skips = []
         for row in res:
             row = dict(zip(fields, row))
-            meta = json.loads(row['meta'])
-            extra = meta['extra']
+            is_skip = row['status'] == self.model.SKIP
+
+            extra = row
+
+            if row['meta']:
+                meta = json.loads(row['meta'])
+                extra.update(**meta['extra'])
+                extra['name'] = meta['name']
+                extra['subtitle'] = meta['subtitle']
+
             status = self.model.status_id_to_text(row['status'])
             extra['status'] = status
             extra['score'] = min(row['score'], 1)
-            extra['name'] = meta['name']
             extra['entity'] = row['entity']
-            extra['subtitle'] = meta['subtitle']
-            extra['pid'] = meta['full_pid']
-            splitpid = extra['pid'].split('_')
-            extra['nmlid'] = row['nmlid']
+            # extra['pid'] = meta['full_pid']
+            splitpid = row['pid'].split('_')
+            # extra['nmlid'] = row['nmlid']
             extra['url'] = 'https://hetarchief.be/pid/%s/%d' % (splitpid[0], int(splitpid[2]))
             extra['nmlurl'] = 'https://database.namenlijst.be/#/person/_id=%s' % extra['nmlid']
+
             try:
                 extra['died_age'] = int(extra['died_age'])
-            except (ValueError, TypeError):
+            except (ValueError, TypeError, KeyError):
                 extra['died_age'] = None
 
             if type(extra['died_age']) is not int:
                 extra['died_age'] = None
 
             data.append(extra)
+            if is_skip:
+                skips.append(extra)
 
-            for k, v in meta['rating_breakdown'].items():
-                data_fields.append(dict(field=k, status=status, score=min(v, 1), amount=1))
+            if row['meta']:
+                for k, v in meta['rating_breakdown'].items():
+                    data_fields.append(dict(field=k, status=status, score=min(v, 1), amount=1))
 
+        skip_status = self.model.status_id_to_text(self.model.SKIP)
+
+        skips = pd.DataFrame.from_dict(data)
+        skips = skips[skips.status == skip_status]
         extra = pd.DataFrame.from_dict(data)
+        extra = extra[extra.score > 0]
         ratings = pd.DataFrame.from_dict(data_fields)
-        return dict(extra=extra, ratings=ratings)
+        return dict(extra=extra, ratings=ratings, skips=skips)
 
     def attestationcounts(self):
         stats = self._stats_attestation()
@@ -349,23 +365,43 @@ class Stats:
         # stats = self.filter_status(stats['extra'])
         stats = stats['extra']
         stats = stats[stats.status != self.model.status_id_to_text(self.model.SKIP)]
-        top = stats.groupby('nmlid').size().nlargest(20).index.tolist()
-        stats = stats[stats.nmlid.isin(top)].groupby('nmlid')
+        top = stats.groupby('entity').size().nlargest(20).index.tolist()
+        stats = stats[stats.entity.isin(top)].groupby('entity')
+
         stats = stats.apply(lambda x: x.sort_values('score', ascending=False))
-        return stats.groupby('nmlid').head(1)
+
+        stats['entity_count'] = stats['entity']
+        aggs = {k: 'first' for k in stats.columns}
+        aggs['entity_count'] = 'count'
+        stats = stats.groupby('entity_count').agg(aggs)
+        stats = stats.sort_values('entity_count', ascending=False)
+        stats['entity_count'] = stats['entity_count'].apply(lambda c: '%dx' % (c,))
+        stats['name'] = stats['entity']
+        return stats
+
+    def _skipped_names_items(self):
+        stats = self.get_user_segmentations()
+        stats = stats['skips']
+        return stats
 
     def _skipped_names(self):
-        skips = self.model.status_id_to_text(self.model.SKIP)
+        stats = self._skipped_names_items()
 
-        stats = self.get_user_segmentations()
-        stats = stats['extra']
-        stats = stats[stats.status == skips]
+        stats['entity_count'] = stats['entity']
 
-        # stats = stats[stats.score > 0]
-        top = stats.groupby('name').size().nlargest(20).index.tolist()
-        stats = stats[stats.name.isin(top)].groupby('name')
+        top = stats.groupby('entity_count').size().nlargest(20).index.tolist()
+        stats = stats[stats.entity_count.isin(top)]
+
+        aggs = {k: 'first' for k in stats.columns}
+        aggs['entity_count'] = 'count'
+        stats = stats.groupby('entity_count')
         stats = stats.apply(lambda x: x.sort_values('score', ascending=False))
-        return stats.groupby('name').head(1)
+
+        stats = stats.groupby('entity_count').agg(aggs)
+        stats = stats.sort_values('entity_count', ascending=False)
+        stats['entity_count'] = stats['entity_count'].apply(lambda c: '%dx' % (c,))
+        stats['name'] = stats['entity']
+        return stats
 
     def _young_deaths(self):
         stats = self.get_user_segmentations()
