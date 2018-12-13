@@ -76,6 +76,9 @@ def process(row):
 
     with conn2.cursor() as cur3:
         cur3.execute(query, (pid,))
+        if not cur3.rowcount:
+            return
+        
         for row in tqdm(cur3, total=cur3.rowcount, desc=pid):
             try:
                 process_pid(row)
@@ -100,7 +103,8 @@ def process_pid(row):
             rating = rater.ratings()
             meta['rating_breakdown'] = {k: rating.scores[k].rating for k in rating.scores}
             meta['rating_multiplier'] = rating.total_multiplier
-            new_rating = rating.total
+            new_score = rating.total
+            meta['quality'] = new_score
         except KeyError as e:
             logger.warning(e)
 
@@ -109,7 +113,7 @@ def process_pid(row):
 
         with timeit('SLOW UPDATE %s' % id_, 1e3), conn2.cursor() as cur2:
             cur2.execute('UPDATE ' + args.table + ' SET score = %s, meta = %s WHERE id=%s',
-                         [new_rating, json.dumps(meta), id_])
+                         [new_score, json.dumps(meta), id_])
             conn2.commit()
     except Exception as e:
         try:
