@@ -30,6 +30,12 @@ def namenlijst(**kwargs):
     # def wrap(n):
     #    return AttributeMapper(n, dict(firstname='surname', lastname='familyname'))
     wrap = lambda k: AttributeMapper(k, dict(firstname='surname', lastname='familyname'))
+    if 'document' not in kwargs:
+        kwargs['document'] = {}
+
+    if 'options' not in kwargs:
+        kwargs['options'] = []
+
     results = Namenlijst().findPerson(**kwargs)
     return RowWrapper(results, wrap)
 

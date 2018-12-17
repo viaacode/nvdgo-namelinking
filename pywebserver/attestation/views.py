@@ -163,6 +163,7 @@ def stats(request, model=None, statname=None, format_=None):
             "skipped_names": obj._skipped_names(),
             "skips": skips,
             'skipped_count': len(skipped),
+            "stats_pcts": obj._stats_pcts(),
         }
 
         segments = ('born_country', 'died_country', 'victim_type_details', 'victim_type', 'gender')

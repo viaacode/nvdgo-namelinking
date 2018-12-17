@@ -12,7 +12,7 @@
        section { overflow:auto; width: 100%; }
        img { max-height: 95%; max-width: 95%;}
        img.graph { margin: 5px 20px 5px 5px; padding 5px;  }
-       img.graph, dl { box-shadow: 0 0 5px black; margin: 5px 20px 5px 5px; vertical-align: top; }
+       img.graph, dl, .bordered { box-shadow: 0 0 5px black; margin: 5px 20px 5px 5px; vertical-align: top; }
        dl { padding: 10px; width: fit-content; display: grid; grid-template-columns: max-content auto; }
        dt { grid-column-start: 1; }
        dd { grid-column-start: 2; }
@@ -30,6 +30,7 @@
        ul.list li { margin-bottom: 2px; }
        a, a:link, a:visited, a:hover { color: 0E0C90; font-style: italic; text-decoration: none; }
        body { -webkit-print-color-adjust: exact !important; color-adjust: exact; }
+       td { vertical-align: top; }
        @media print {
         .noprint { display:none; }
         img { max-width: 100%; max-height: 80%; page-break-inside: avoid; page-break-before: auto;
@@ -37,6 +38,25 @@
        }
        @media screen {
         .printonly { display:none; }
+       }
+       table.stats {
+        border-spacing: 15px;
+        box-sizing: border-box;
+       }
+       table.stats tr.bordered td:first-child {
+        box-shadow: inset 0 0 5px black;
+       }
+       table.stats tbody td div.percentage {
+        font-size: 0.9em;
+        text-align: right;
+       }
+       table.stats tbody td div.number {
+        font-size: 1em;
+        text-align: right;
+        font-weight: bold;
+       }
+       .nowrap {
+        white-space: nowrap;
        }
    </style>
    <script type="text/javascript">
@@ -51,12 +71,43 @@
         A match is defined as any first and family name combination (or alternative spellings) that
         was found <strong>exactly</strong> in the OCR of a newspaper page.
     </p>
-    <dl>
-        {% for k, v in stats_matches.items %}
-            <dt>{{ k }}: </dt>
-            <dd>{{ v }}</dd>
-        {% endfor %}
-    </dl>
+    <p>
+        The data below does not include {{ skipped_count }} "skipped" matches. Only matches with a score > 0 are considered
+        "quality" matches and are added to the Namenlijst block on hetarchief.be
+    </p>
+    <section>
+        <table class="stats">
+            <tbody>
+                {% for k, v in stats_pcts.items %}
+                <tr class="bordered">
+                    <td>
+                        <div class="number">{{ v.0 }}</div>
+                        {%if v.4 %}
+                        <div class="percentage">
+                            {{ v.4 | pct }} of total {{ v.3 }} {{k}}
+                        </div>
+                        {% endif %}
+                    </td>
+                    <td>{{ k }} {% if v.4 %} with {% endif %} possible matches</td>
+                    <td class="nowrap">of which</tdcl>
+                    <td>
+                        <div class="number">{{ v.1 }}</div>
+                        <div class="percentage">{{ v.2 | pct }} of possible matches</div>
+
+                        {%if v.5 %}
+                        <div class="percentage">
+                            {{ v.5 | pct }} of total {{k}}
+                        </div>
+                        {% endif %}
+                    </td>
+                    <!-- td>{% if v.3 %}, with a total of {{ v.3 }} {{ k }}{% endif %}</td -->
+                    <td class="nowrap"> with score > 0</td>
+
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
 
     <h3>Attestation</h3>
     <section>

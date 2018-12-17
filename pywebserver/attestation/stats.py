@@ -12,6 +12,9 @@ from . import models
 import pythonmodules.decorators as decorators
 from pythonmodules.cache import OptimizedFileCacher
 import matplotlib
+from pythonmodules.namenlijst import Namenlijst
+from pythonmodules.mediahaven import MediaHaven
+from lib.linker import Datasources
 
 
 matplotlib.use('Agg')
@@ -73,29 +76,43 @@ class Stats:
         return self._cacher
 
     @decorators.classcache
-    def _stats_matches(self):
-        fields = (
-            'COUNT(DISTINCT pid)',
-            'COUNT(DISTINCT nmlid)',
-            'SUM(CEIL(score))',
-            'COUNT(*)',
-            'COUNT(status = 4 OR NULL)',
-            'SUM(score)'
-        )
-        fieldnames = (
-            'Amount of newspaper pages with matches',
-            'Amount of IFFM names with matches',
-            'Amount of matches with a score > 0',
-            'Total amount of matches',
-            'Matches skipped',
-            'Average score',
-            '% of matches with score > 0'
-        )
-        res = self.db.execute('SELECT %s FROM %s' % (', '.join(fields), self.table))
-        res = list(map(int, res.fetchone()))
-        res[-1] = '%.2f%%' % (res[-1]/res[2] * 100)
-        res.append('%.2f%%' % (res[2]/res[3] * 100,))
-        return OrderedDict(zip(fieldnames, res))
+    def _stats_pcts(self):
+        mh = MediaHaven()
+
+        nl_count = len(Datasources['namenlijst']['func']())
+        mh_count = len(mh.search('+(workflow:GMS) +(archiveStatus:on_tape)'))
+
+        data = OrderedDict({
+            '': 'COUNT(*)',
+            'names from IFFM namenlijst': ('COUNT(DISTINCT nmlid)', nl_count),
+            'newspaper pages': ('COUNT(DISTINCT pid)', mh_count),
+        })
+
+        for k, v in data.items():
+            total = None
+            if type(v) is tuple:
+                total = v[1]
+                v = v[0]
+
+            args = (v, self.table, self.model.SKIP)
+            res = self.db.execute('SELECT %s FROM %s WHERE status != %d' % args)
+            matches = int(res.scalar())
+
+            res = self.db.execute('SELECT %s FROM %s WHERE status != %d and score > 0' % args)
+            matches_with_score = int(res.scalar())
+            counts = [
+                matches,
+                matches_with_score,
+                matches/matches_with_score,
+            ]
+
+            if total is not None:
+                counts.append(total)
+                counts.append(matches/total)
+                counts.append(matches_with_score/total)
+            data[k] = counts
+
+        return data
 
     @decorators.classcache
     def _stats_attestation(self):
