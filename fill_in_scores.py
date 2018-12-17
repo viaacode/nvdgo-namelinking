@@ -108,12 +108,21 @@ def process_pid(row):
         except KeyError as e:
             logger.warning(e)
 
-        if cur_rating == new_rating and meta == meta_old:
+        toset = dict()
+        if cur_rating != new_rating:
+            toset['score'] = new_rating
+
+        if meta != meta_old:
+            toset['meta'] = json.dumps(meta)
+
+        if not len(toset):
             return
 
         with timeit('SLOW UPDATE %s' % id_, 1e3), conn2.cursor() as cur2:
-            cur2.execute('UPDATE ' + args.table + ' SET score = %s, meta = %s WHERE id=%s',
-                         [new_score, json.dumps(meta), id_])
+            keys = ','.join([k + ' = %s' for k in toset.keys()])
+            values = [toset[k] for k in toset.keys()]
+            values.append(id_)
+            cur2.execute('UPDATE ' + args.table + ' SET ' + keys + ' WHERE id=%s', values)
             conn2.commit()
     except Exception as e:
         try:

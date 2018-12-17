@@ -246,7 +246,7 @@ SKIPS_LIKES = [
 ]
 
 double_names = ['herman', 'robert', 'nn', 'martin', 'voltaire', 'maurice', 'pierre', 'armand', 'henri',
-                'paul', 'michel']
+                'paul', 'michel', 'thomas']
 for name in double_names:
     SKIPS_LIKES.append('%s %s' % (name, name))
 
