@@ -8,7 +8,6 @@ from io import BytesIO
 from lib.matcher import Rater
 from lib.dubbels import get_all_for_pid
 from django.http import Http404
-import seaborn as sns
 from django.views.decorators.cache import cache_page
 from django.conf import settings
 

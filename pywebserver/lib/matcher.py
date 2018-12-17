@@ -425,7 +425,10 @@ class Rater:
         total_score = \sum_{}\frac{multiplier}{4\sqrt[5]{score^6}}
         '''
         total = sum(scores[k].rating for k in scores)
-        total_multiplier = .5 + (m / 5)
+        if m == 1 and 'died_age' in scores:
+            total_multiplier = 0
+        else:
+            total_multiplier = .5 + (m / 5)
         total *= total_multiplier
         total = min(0.99, total)
         return Rating(scores, total, total_multiplier)
@@ -450,7 +453,7 @@ class Meta:
             meta = dict()
 
         meta['found_name'] = entity
-        meta['quality'] = score
+        # meta['quality'] = score
         meta['full_pid'] = full_pid
         meta['attestation_id'] = attestation_id
 

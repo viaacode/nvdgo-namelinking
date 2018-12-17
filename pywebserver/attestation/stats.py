@@ -103,7 +103,7 @@ class Stats:
             counts = [
                 matches,
                 matches_with_score,
-                matches/matches_with_score,
+                matches_with_score/matches,
             ]
 
             if total is not None:
@@ -148,7 +148,7 @@ class Stats:
     @decorators.classcache
     def _usersegmentations(self):
         fields = ('meta', 'pid', 'nmlid', 'status', 'score', 'entity')
-        q = 'SELECT %s FROM %s WHERE (score > 0 OR status=4)' % \
+        q = 'SELECT %s FROM %s WHERE (score > 0  AND meta IS NOT NULL) OR status=4' % \
             (', '.join(fields), self.table)
         res = self.db.execute(q)
         data = []
