@@ -245,8 +245,9 @@ SKIPS_LIKES = [
     'kaiser wilhelm',
 ]
 
-double_names = ['herman', 'robert', 'nn', 'martin', 'voltaire', 'maurice', 'pierre', 'armand', 'henri',
-                'paul', 'michel', 'thomas', 'gustin']
+double_names = set(['herman', 'robert', 'nn', 'martin', 'voltaire', 'maurice', 'pierre', 'armand', 'henri',
+                    'paul', 'michel', 'thomas', 'gustin', 'victor', 'martin', 'gabriel', 'jacques', 'jean',
+                    'fernand', 'charles', 'larbi', 'major'])
 for name in double_names:
     SKIPS_LIKES.append('%s %s' % (name, name))
 

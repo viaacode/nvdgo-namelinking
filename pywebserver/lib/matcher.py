@@ -96,7 +96,7 @@ class Matcher:
                     matches[found_text] = Score(text=text, min_distance=words_distance, match=found_text,
                                                 distances=distances)
 
-        logger.debug(matches)
+        # logger.debug(matches)
 
         return matches.values()
 
@@ -108,7 +108,7 @@ class Matcher:
         # logger.debug('lookups: %s', lookups)
         for k, lookup in lookups.items():
             if lookup is None:
-                logger.debug('check %s: None', k)
+                # logger.debug('check %s: None', k)
                 continue
             v, multiplier, vals, max_distance = lookup
             score = []
@@ -120,7 +120,7 @@ class Matcher:
                     score.extend(self.score(val, lookup))
                     done.append(norm_val)
 
-            logger.debug('%s score = %s, (vals: %s)', k, str(score), vals)
+            # logger.debug('%s score = %s, (vals: %s)', k, str(score), vals)
             if len(score):
                 amount = len(score)
                 min_distance = min(s.min_distance for s in score)
@@ -244,6 +244,7 @@ class Rater:
     def lookups(self):
         if self._lookups is None:
             debug_call = logger.debug
+            debug_call = lambda *args: None
             nml = self.details
             self._lookups = OrderedDict()
             err = 'LOOKUP "%s" %s'
