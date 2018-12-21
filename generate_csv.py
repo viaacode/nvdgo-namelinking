@@ -152,6 +152,7 @@ def process(row):
 process._multithread.pbar = tqdm(total=cur.rowcount)
 process(cur)
 
+csv_file.flush()
 
 if csv_file is not sys.stdout:
     csv_file.close()

@@ -349,6 +349,7 @@ class Stats:
         stats = self.get_user_segmentations()
         stats = stats['ratings']
         stats = stats[stats.status != self.model.status_id_to_text(self.model.UNDEFINED)]
+        stats = stats[stats.status != self.model.status_id_to_text(self.model.SKIP)]
 
         fig = plt.figure(figsize=(5, 6))
         ax = fig.gca()
