@@ -5,6 +5,7 @@ from pythonmodules.profiling import timeit
 from pythonmodules.namenlijst import Namenlijst
 from pythonmodules.translations import Translator
 from pythonmodules.config import Config
+from pythonmodules.alto import Extent
 import logging
 from pysolr import Solr
 from .solrimport import Importer
@@ -512,7 +513,7 @@ class Meta:
                     word.scale(search_res['correction_factor'], inplace=True)
                 extent_textblock.scale(search_res['correction_factor'], inplace=True)
 
-            extent_textblock = extent_textblock.as_coords()
+            extent_textblock = Extent.extend(*extents_highlight).pad(-200).as_coords()
             extents_highlight = [extent.as_coords() for extent in extents_highlight]
 
             meta["zoom"] = extent_textblock

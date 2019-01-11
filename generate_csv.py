@@ -11,7 +11,7 @@ import logging
 import csv
 import sys
 import json
-
+from pythonmodules.alto import Extent
 
 parser = ArgumentParser(description='Generates the export csv')
 parser.add_argument('--start', type=int, nargs='?', help='start from')
@@ -22,6 +22,7 @@ parser.add_argument('--log-file', type=str, default='generate_csv.log', help='Se
 parser.add_argument('--csv', type=str, help='The csv to write te results to, if not given will output to stdout')
 parser.add_argument('--where', type=str, default=None, help='Extra conditions')
 parser.add_argument('--debug', default=False, action='store_true')
+parser.add_argument('--recalculate-textblock', default=True, action='store_false')
 
 args = parser.parse_args()
 
@@ -135,6 +136,10 @@ def process(row):
         }
 
         lod = json.dumps(lod)
+        if args.recalculate_textblock:
+            extents = map(Extent.from_coords, meta['highlight'])
+            meta['zoom'] = Extent.extend(*extents).pad(-200).as_coords()
+
         meta = json.dumps(meta)
         csv_row = [pid, page, 'namenlijst', external_id, entity, lod, meta]
         writer.writerow(csv_row)
