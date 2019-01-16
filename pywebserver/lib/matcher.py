@@ -437,9 +437,10 @@ class Rater:
 
 
 class Meta:
-    def __init__(self, config=None):
+    def __init__(self, config=None, force_regen=False):
         self.nl = Namenlijst(config)
         self.mh = MediaHaven(config)
+        self.force_regen = force_regen
 
     def __call__(self, full_pid, external_id, entity, score, meta):
         nl = self.nl
@@ -465,7 +466,8 @@ class Meta:
         logger.info('Generate meta data for %s', attestation_id)
 
         keys = ('born_country', 'died_country', 'died_age', 'gender', 'victim_type', 'victim_type_details')
-        if notexists('extra', 'subtitle', 'name') or \
+        if self.force_regen or \
+           notexists('extra', 'subtitle', 'name') or \
            any(f not in meta['extra'] for f in keys):
             person = nl.get_person_full(external_id)
             meta['name'] = person.names.name

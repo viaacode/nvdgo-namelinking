@@ -22,7 +22,8 @@ parser.add_argument('--log-file', type=str, default='generate_csv.log', help='Se
 parser.add_argument('--csv', type=str, help='The csv to write te results to, if not given will output to stdout')
 parser.add_argument('--where', type=str, default=None, help='Extra conditions')
 parser.add_argument('--debug', default=False, action='store_true')
-parser.add_argument('--recalculate-textblock', default=True, action='store_false')
+parser.add_argument('--recalculate-textblock', default=False, action='store_true')
+parser.add_argument('--recalculate-meta', default=False, action='store_true')
 
 args = parser.parse_args()
 
@@ -69,7 +70,7 @@ writer.writerow(headers)
 i = 0
 
 
-get_meta = Meta()
+get_meta = Meta(force_regen=args.recalculate_meta)
 
 
 @multithreaded(10, pre_start=True, pass_thread_id=False)
@@ -93,36 +94,14 @@ def process(row):
             cur_write.close()
 
         lod = {
-            "@context": [
-                "https://schema.org/",
-                {
-                    "confidence": "http://purl.org/ontology/af/confidence",
-                    "dcterms": "http://purl.org/dc/terms/",
-                    "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
-                    "af": "http://purl.org/ontology/af/",
-                    "label": "rdfs:label",
-                    "topicOf": {
-                        "@id": "http://xmlns.com/foaf/0.1/topicOf",
-                        "@type": "@id"
-                    },
-                    "mentions": {
-                        "@id": "schema:mentions",
-                        "@type": "@id"
-                    },
-                    "partOf": {
-                        "@id": "dcterms:partOf",
-                        "@type": "@id"
-                    }
-                }
-            ],
-            "confidence": score,
+            "af:confidence": score,
             "@graph": [
                 {
                     "@id": "https://hetarchief.be/pid/%s/%d" % (pid, page),
-                    "https://schema.org/mentions": [
+                    "mentions": [
                         {
                             "@id": "https://database.namenlijst.be/publicsearch/#/person/_id=%s" % (external_id,),
-                            "@type": "https://schema.org/Person",
+                            "@type": "Person",
                             "name": full_name,
                             "label": full_name,
                             "topicOf": {
