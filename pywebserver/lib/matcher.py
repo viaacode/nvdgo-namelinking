@@ -1,7 +1,6 @@
 import re
 from collections import namedtuple, OrderedDict
 from itertools import chain
-from pythonmodules.profiling import timeit
 from pythonmodules.namenlijst import Namenlijst
 from pythonmodules.translations import Translator
 from pythonmodules.config import Config
@@ -13,6 +12,7 @@ from pythonmodules.ner import normalize
 from pythonmodules.mediahaven import MediaHaven
 import json
 from babel.dates import format_date, get_date_format
+from copy import deepcopy
 
 
 logger = logging.getLogger(__name__)
@@ -424,7 +424,7 @@ class Rater:
         m = len(scores)
 
         '''
-        total_score = \sum_{}\frac{multiplier}{4\sqrt[5]{score^6}}
+        total_score = \min({0.99}, {\frac{2n+5}{10}\sum_{1..n}\frac{weight}{3\sqrt[5]{mindistance^3}}})
         '''
         total = sum(scores[k].rating for k in scores)
         if m == 1 and 'died_age' in scores:
@@ -445,7 +445,10 @@ class Meta:
     def __call__(self, full_pid, external_id, entity, score, meta):
         nl = self.nl
         mh = self.mh
+        meta = deepcopy(meta)
         attestation_id = 'namenlijst/%s/%s/%s' % (full_pid, external_id, entity.replace(' ', '/'))
+        pid, pid_date, page = full_pid.split('_', 2)
+        page = int(page)
         if score > 0.99:
             score = 0.99
 
@@ -458,7 +461,8 @@ class Meta:
         meta['found_name'] = entity
         # meta['quality'] = score
         meta['full_pid'] = full_pid
-        meta['attestation_id'] = attestation_id
+        # meta['attestation_id'] = attestation_id
+        meta['url_hetarchief'] = 'https://hetarchief.be/pid/%s/%d/namenlijst-%s' % (pid, page, external_id)
 
         def notexists(*fields):
             return any(field not in meta or meta[field] is None for field in fields)

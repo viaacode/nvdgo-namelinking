@@ -142,5 +142,6 @@ if csv_file is not sys.stdout:
     csv_file.close()
 
 cur.close()
+conn.commit()
 conn.close()
 
